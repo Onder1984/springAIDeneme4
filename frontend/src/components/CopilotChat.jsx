@@ -11,7 +11,8 @@ import {
   ArrowRightOutlined,
   FireOutlined,
   PieChartOutlined,
-  LineChartOutlined
+  LineChartOutlined,
+  BarChartOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 import { marked } from 'marked';
@@ -62,6 +63,34 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
   const detectWidgetForQuery = (prompt, executionLogs = []) => {
     const p = (prompt || '').toLowerCase();
 
+    // Görselleştirme/Grafik talebi içeren açık anahtar kelimeler
+    const hasVisualKeyword =
+      p.includes('grafik') ||
+      p.includes('grafiği') ||
+      p.includes('grafigi') ||
+      p.includes('çizelge') ||
+      p.includes('cizelge') ||
+      p.includes('harita') ||
+      p.includes('haritası') ||
+      p.includes('pasta') ||
+      p.includes('pie') ||
+      p.includes('donut') ||
+      p.includes('örümcek') ||
+      p.includes('orumcek') ||
+      p.includes('spider') ||
+      p.includes('dalga formu') ||
+      p.includes('waveform') ||
+      p.includes('matris');
+
+    // Operatör açık bir grafik talep etmeksizin sadece net adet / sayı sorduysa grafik açma
+    const isCountPrompt =
+      !hasVisualKeyword &&
+      /\b(ka[çc]|adet|say[ıi]s[ıi]|toplam say[ıi]|tane)\b/i.test(p);
+
+    if (isCountPrompt) {
+      return null;
+    }
+
     // 1. Telsiz Çağrı Adı Isı Haritası & İletişim Matrisi Tetikleyicileri
     const isHeatmapPrompt =
       p.includes('ısı haritası') ||
@@ -74,12 +103,10 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
       p.includes('etkilesim matrisi') ||
       p.includes('çağrı çift') ||
       p.includes('cagri cift') ||
-      p.includes('telsiz ağı') ||
-      p.includes('telsiz agi') ||
-      p.includes('haberleşme ağı') ||
-      p.includes('haberlesme agi') ||
+      (p.includes('telsiz ağı') && (p.includes('grafik') || p.includes('matris') || p.includes('harita'))) ||
+      (p.includes('haberleşme ağı') && (p.includes('grafik') || p.includes('matris') || p.includes('harita'))) ||
       p.includes('link ilişki') ||
-      (p.includes('çağrı') && (p.includes('analiz') || p.includes('konuşma') || p.includes('görüşme') || p.includes('süre') || p.includes('çift')));
+      (p.includes('çağrı') && (p.includes('analiz') || p.includes('görüşme süresi') || p.includes('etkileşim')));
 
     const isHeatmapTool = executionLogs.some((log) =>
       log.includes('getCallsignPairInteractionStats') ||
@@ -92,8 +119,8 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
     }
 
     // 2. Dalga Formu & Zamansal Değişim (Waveform Timeline) Tespiti
+    // Sırf 'SP040' veya 'spot no' geçti diye grafik AÇILMAZ; kullanıcı dalga formu/zamansal değişim veya grafik istemelidir.
     const isTimelinePrompt =
-      /\b(sp\d{1,4})\b/i.test(p) ||
       p.includes('dalga formu') ||
       p.includes('waveform') ||
       p.includes('zamansal değişim') ||
@@ -102,8 +129,6 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
       p.includes('frekans degisimi') ||
       p.includes('pri değişimi') ||
       p.includes('pw değişimi') ||
-      p.includes('spot no') ||
-      p.includes('spot_no') ||
       p.includes('zaman serisi') ||
       p.includes('timeline') ||
       p.includes('intraday') ||
@@ -142,25 +167,106 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
       return { type: 'WAVEFORM_TIMELINE', source: src, targetKey: key || (src === 'RADAR' ? 'SP048' : 'VOLGA-01') };
     }
 
-    // 3. Taktik Kategorik Dağılım / Pasta (Pie & Donut) Grafiği Tetikleyicileri
-    const isPiePrompt =
-      p.includes('dağılım') ||
-      p.includes('dagilim') ||
+    // 3. Haftanın Günlerine Göre LOB ve Kestirim Tespit Dağılımı (Örümcek Ağı / Spider Web) Tespiti
+    const isWeekdayRadarPrompt =
+      p.includes('haftanın günleri') ||
+      p.includes('haftanin gunleri') ||
+      p.includes('günlere göre') ||
+      p.includes('gunlere gore') ||
+      p.includes('örümcek ağı') ||
+      p.includes('orumcek agi') ||
+      p.includes('örümcek agi') ||
+      p.includes('spider web') ||
+      p.includes('spider chart') ||
+      p.includes('haftalık lob') ||
+      p.includes('haftalik lob') ||
+      p.includes('haftalık kestirim') ||
+      p.includes('haftalik kestirim') ||
+      ((p.includes('haftalık') || p.includes('haftalik')) && (p.includes('dağılım') || p.includes('dagilim') || p.includes('grafik')));
+
+    const weekdayToolLog = executionLogs.find((log) =>
+      log.includes('getWeekdayEmissionDistribution') || log.includes('getWeekdayRadarDistribution') || log.includes('weekday-radar')
+    );
+
+    if (isWeekdayRadarPrompt || weekdayToolLog) {
+      let src = 'TUMU';
+      let rec = 'TUMU';
+      let time = 'ALL';
+
+      if (weekdayToolLog) {
+        const srcMatch = weekdayToolLog.match(/source=([A-Za-z]+)/);
+        const recMatch = weekdayToolLog.match(/recordType=([A-Za-z0-9_]+)/);
+        const timeMatch = weekdayToolLog.match(/timeRange=([A-Za-z0-9_]+)/);
+        if (srcMatch) src = srcMatch[1].toUpperCase();
+        if (recMatch) rec = recMatch[1].toUpperCase();
+        if (timeMatch) time = timeMatch[1].toUpperCase();
+      } else {
+        if (p.includes('radar') && !p.includes('muhabere') && !p.includes('comint')) src = 'RADAR';
+        else if ((p.includes('muhabere') || p.includes('comint') || p.includes('telsiz')) && !p.includes('radar')) src = 'COMINT';
+        else src = 'TUMU';
+
+        if (p.includes('sadece lob') || (p.includes('lob') && !p.includes('kestirim'))) rec = 'SADECE_LOB';
+        else if (p.includes('sadece kestirim') || (p.includes('kestirim') && !p.includes('lob'))) rec = 'SADECE_KESTIRIM';
+        else rec = 'TUMU';
+
+        if (p.includes('7 gün') || p.includes('7 gun') || p.includes('bir hafta') || p.includes('son hafta')) time = 'SON_7_GUN';
+        else if (p.includes('30 gün') || p.includes('30 gun') || p.includes('ay')) time = 'SON_30_GUN';
+      }
+
+      return { type: 'WEEKDAY_RADAR', source: src, recordType: rec, timeRange: time };
+    }
+
+    // 4. Radar Frekans Spektrum Doluluk & Yoğunluk Tespiti
+    const isOccupancyPrompt =
+      p.includes('spektrum doluluk') ||
+      p.includes('doluluk oranı') ||
+      p.includes('doluluk orani') ||
+      p.includes('frekans doluluk') ||
+      p.includes('bant doluluk') ||
+      (p.includes('spektrum') && (p.includes('grafik') || p.includes('bar') || p.includes('doluluk'))) ||
+      p.includes('occupancy');
+
+    const occupancyToolLog = executionLogs.find((log) =>
+      log.includes('getRadarSpectrumOccupancy') || log.includes('spectrum-occupancy')
+    );
+
+    if (isOccupancyPrompt || occupancyToolLog) {
+      let time = 'SON_24_SAAT';
+      if (p.includes('1 saat') || p.includes('son saat')) time = 'SON_1_SAAT';
+      else if (p.includes('hafta') || p.includes('7 gün')) time = 'SON_1_HAFTA';
+      return { type: 'SPECTRUM_OCCUPANCY', timeRange: time };
+    }
+
+    // 5. Taktik Kategorik Dağılım / Pasta (Pie & Donut) Grafiği Tetikleyicileri
+    const hasExplicitPieWord =
       p.includes('pasta') ||
       p.includes('pie') ||
       p.includes('donut') ||
-      p.includes('polarizasyon') ||
-      p.includes('lisan') ||
-      p.includes('haberleşme şekli') ||
-      p.includes('modülasyon') ||
-      p.includes('modulasyon') ||
-      p.includes('radar görevi') ||
-      p.includes('platform ortamı') ||
-      p.includes('platform') ||
-      p.includes('hedef yer') ||
-      p.includes('mevzi') ||
-      p.includes('frekans bandı') ||
-      p.includes('nato bant');
+      p.includes('dağılım') ||
+      p.includes('dagilim') ||
+      p.includes('oranları') ||
+      p.includes('oranlari') ||
+      p.includes('yüzdeleri') ||
+      p.includes('yuzdeleri');
+
+    const isPiePrompt =
+      (p.includes('pasta') || p.includes('pie') || p.includes('donut')) ||
+      (hasExplicitPieWord && (
+        p.includes('polarizasyon') ||
+        p.includes('lisan') ||
+        p.includes('haberleşme') ||
+        p.includes('modülasyon') ||
+        p.includes('modulasyon') ||
+        p.includes('görev') ||
+        p.includes('gorev') ||
+        p.includes('platform') ||
+        p.includes('hedef yer') ||
+        p.includes('mevzi') ||
+        p.includes('frekans bandı') ||
+        p.includes('nato bant') ||
+        p.includes('teşhis') ||
+        p.includes('teshis')
+      ));
 
     const distributionToolLog = executionLogs.find((log) => log.includes('getTacticalDistribution'));
 
@@ -194,53 +300,6 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
       }
 
       return { type: 'PIE_DISTRIBUTION', source: src, criterion: crit };
-    }
-
-    // 4. Haftanın Günlerine Göre LOB ve Kestirim Tespit Dağılımı (Örümcek Ağı / Spider Web) Tespiti
-    const isWeekdayRadarPrompt =
-      p.includes('haftanın günleri') ||
-      p.includes('haftanin gunleri') ||
-      p.includes('günlere göre') ||
-      p.includes('gunlere gore') ||
-      p.includes('örümcek ağı') ||
-      p.includes('orumcek agi') ||
-      p.includes('örümcek agi') ||
-      p.includes('spider web') ||
-      p.includes('spider chart') ||
-      p.includes('haftalık lob') ||
-      p.includes('haftalik lob') ||
-      p.includes('haftalık kestirim') ||
-      p.includes('haftalik kestirim') ||
-      (p.includes('hafta') && (p.includes('lob') || p.includes('kestirim') || p.includes('tespit')) && (p.includes('grafik') || p.includes('sayı') || p.includes('sayi')));
-
-    const weekdayToolLog = executionLogs.find((log) => log.includes('getWeekdayEmissionDistribution'));
-
-    if (isWeekdayRadarPrompt || weekdayToolLog) {
-      let src = 'TUMU';
-      let rec = 'TUMU';
-      let time = 'ALL';
-
-      if (weekdayToolLog) {
-        const srcMatch = weekdayToolLog.match(/source=([A-Za-z]+)/);
-        const recMatch = weekdayToolLog.match(/recordType=([A-Za-z0-9_]+)/);
-        const timeMatch = weekdayToolLog.match(/timeRange=([A-Za-z0-9_]+)/);
-        if (srcMatch) src = srcMatch[1].toUpperCase();
-        if (recMatch) rec = recMatch[1].toUpperCase();
-        if (timeMatch) time = timeMatch[1].toUpperCase();
-      } else {
-        if (p.includes('radar') && !p.includes('muhabere') && !p.includes('comint')) src = 'RADAR';
-        else if ((p.includes('muhabere') || p.includes('comint') || p.includes('telsiz')) && !p.includes('radar')) src = 'COMINT';
-        else src = 'TUMU';
-
-        if (p.includes('sadece lob') || (p.includes('lob') && !p.includes('kestirim'))) rec = 'SADECE_LOB';
-        else if (p.includes('sadece kestirim') || (p.includes('kestirim') && !p.includes('lob'))) rec = 'SADECE_KESTIRIM';
-        else rec = 'TUMU';
-
-        if (p.includes('7 gün') || p.includes('7 gun') || p.includes('bir hafta') || p.includes('son hafta')) time = 'SON_7_GUN';
-        else if (p.includes('30 gün') || p.includes('30 gun') || p.includes('ay')) time = 'SON_30_GUN';
-      }
-
-      return { type: 'WEEKDAY_RADAR', source: src, recordType: rec, timeRange: time };
     }
 
     return null;
@@ -291,6 +350,11 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
             source: detectedWidget.source || 'TUMU',
             recordType: detectedWidget.recordType || 'TUMU',
             timeRange: detectedWidget.timeRange || 'ALL'
+          });
+        } else if (detectedWidget.type === 'SPECTRUM_OCCUPANCY') {
+          setOccupancyConfig({
+            timeRange: detectedWidget.timeRange || 'SON_24_SAAT',
+            identities: ['DUSMAN']
           });
         }
       } else {

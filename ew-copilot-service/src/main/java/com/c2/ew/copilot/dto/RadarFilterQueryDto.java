@@ -1,0 +1,30 @@
+package com.c2.ew.copilot.dto;
+
+public record RadarFilterQueryDto(
+    String spotNo,
+    String teshisKimlik,
+    String veriKaynagi,
+    String radarAdi,
+    String radarGorevi,
+    String hss,
+    String bolge,
+    Boolean taciz,
+    String etUygulamaDurumu,
+    String platformOrtami,
+    Double minFrekansMhz,
+    Double maxFrekansMhz,
+    String frekansTipi,
+    Double minPriMicroSec,
+    Double maxPriMicroSec,
+    Double minPwMicroSec,
+    Double maxPwMicroSec,
+    Double minAtpMicroSec,
+    Double maxAtpMicroSec,
+    Double minGenlikDbm,
+    Double maxGenlikDbm,
+    String kayitTipi,
+    String zamanAraligi,
+    String baslangicZamani,
+    String bitisZamani,
+    Integer limit
+) {}
