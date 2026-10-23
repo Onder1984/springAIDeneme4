@@ -85,10 +85,50 @@ export default function WeekdayRadarDistributionWidget({
   const buildChartOption = (dto) => {
     if (!dto || !dto.days || dto.days.length === 0) return {};
 
-    const maxVal = dto.maxIndicatorValue > 0 ? dto.maxIndicatorValue : 100;
-    const indicators = dto.days.map((d) => ({
+    // Sabit adım genişliği ve sabit eksen tavanı:
+    // Parametreler (Kaynak, Kayıt Tipi, Zaman Aralığı) seçildikçe adım genişliğinin ve aralıkların
+    // dinamik değişmesini engellemek için sabit 50.000 adımlı ölçek kullanılır.
+    const STEP_SIZE = 50000;
+    const BASE_MAX = 200000;
+
+    let maxValInData = 0;
+    if (dto && dto.days) {
+      dto.days.forEach((d) => {
+        maxValInData = Math.max(
+          maxValInData,
+          d.radarTotalCount || 0,
+          d.comintTotalCount || 0,
+          d.radarLobCount || 0,
+          d.radarKestirimCount || 0,
+          d.comintLobCount || 0,
+          d.comintKestirimCount || 0
+        );
+      });
+    }
+
+    const fixedMax = maxValInData > BASE_MAX
+      ? Math.ceil(maxValInData / STEP_SIZE) * STEP_SIZE
+      : BASE_MAX;
+    const splitCount = Math.round(fixedMax / STEP_SIZE);
+
+    const indicators = dto.days.map((d, idx) => ({
       name: d.dayName,
-      max: maxVal
+      max: fixedMax,
+      axisLabel: {
+        show: idx === 0, // Adım sayıları sadece dikey eksende (Pazartesi) temiz ve sabit şekilde görünür
+        showMaxLabel: true,
+        showMinLabel: false,
+        color: '#94a3b8',
+        fontSize: 10,
+        fontWeight: 600,
+        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+        padding: [2, 5],
+        borderRadius: 3,
+        formatter: (val) => {
+          if (!val || val === 0) return '';
+          return val.toLocaleString('tr-TR');
+        }
+      }
     }));
 
     // Kaynak ve Kayıt Tipine göre Seriler oluştur
@@ -285,9 +325,12 @@ export default function WeekdayRadarDistributionWidget({
       radar: {
         indicator: indicators,
         shape: 'polygon',
-        splitNumber: 4,
+        splitNumber: splitCount,
         radius: '68%',
         center: ['50%', '54%'],
+        axisLabel: {
+          show: false // Sadece indicator[0]'daki eksende gösterilmesi için global kapalı tutulur
+        },
         axisName: {
           color: '#38bdf8',
           fontSize: 11,
@@ -485,6 +528,9 @@ export default function WeekdayRadarDistributionWidget({
           </Title>
           <Tag color="blue" style={{ fontSize: 10, lineHeight: '18px', padding: '0 6px' }}>
             Örümcek Ağı / Radar
+          </Tag>
+          <Tag color="cyan" style={{ fontSize: 10, lineHeight: '18px', padding: '0 6px' }}>
+            Sabit Adım: 50.000
           </Tag>
         </Space>
 
@@ -704,8 +750,8 @@ export default function WeekdayRadarDistributionWidget({
         fontSize: 10,
         color: '#64748b'
       }}>
-        <span>• Ağın her bir kolu haftanın bir gününü temsil eder (1: Pazartesi .. 7: Pazar)</span>
-        <span>İlk tespit zamanı (COALESCE ilk/son) baz alınır</span>
+        <span>• Sabit adım genişliği: 50.000 (0 - 200.000) • Ağın her bir kolu bir günü temsil eder</span>
+        <span>Adım sayıları dikey Pazartesi ekseninde sabit gösterilmektedir</span>
       </div>
 
       {/* Tam Ekran Projeksiyon Modalı */}

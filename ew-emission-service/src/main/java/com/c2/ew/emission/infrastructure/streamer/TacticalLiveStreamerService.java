@@ -58,17 +58,20 @@ public class TacticalLiveStreamerService {
 
     private static final String[][] CALLSIGN_TEMPLATES = {
         {"VOLGA-01", "VOLGA-04", "Rusça", "DUSMAN", "VHF", "DMR_MOBIL", "KRIPTO"},
-        {"VOLGA-04", "VOLGA-HQ", "Rusça", "DUSMAN", "HF", "BELIRSIZ", "SES"},
+        {"VOLGA-04", "VOLGA-HQ", "Rusça", "DUSMAN", "HF", "STANAG_5065_MSK", "SES"},
         {"VOLGA-HQ", "VOLGA-01", "Rusça", "DUSMAN", "VHF", "DMR_BAZ", "KRIPTO"},
         {"KARTAL-1", "SHADOW-03", "Türkçe", "DOST", "VHF", "DMR_MOBIL", "KRIPTO"},
-        {"KARTAL-1", "HQ-KOMUTA", "Türkçe", "DOST", "HF", "BELIRSIZ", "VERI"},
-        {"SHADOW-03", "HQ-KOMUTA", "Türkçe", "DOST", "VHF", "DMR_BAZ", "KRIPTO"},
+        {"KARTAL-1", "HQ-KOMUTA", "Türkçe", "DOST", "HF", "LINK_11_CLEW", "VERI"},
+        {"SHADOW-03", "HQ-KOMUTA", "Türkçe", "DOST", "VHF", "DMR_BAZ_DMR_MOBIL", "KRIPTO"},
         {"OMAR-11", "EAGLE-LEAD", "Arapça", "DUSMAN", "VHF", "DMR_MOBIL", "SES"},
         {"OMAR-11", "GRIFFIN-2", "Arapça", "DUSMAN", "VHF", "D_STAR", "DARBE_PATLAMA"},
         {"NATO-TASK-09", "MED-AIR-CONTROL", "İngilizce", "DOST", "VHF", "DMR_MOBIL", "SES"},
-        {"NATO-TASK-09", "VOLGA-01", "İngilizce", "MUHTEMEL_DUSMAN", "HF", "BELIRSIZ", "VERI"},
+        {"NATO-TASK-09", "VOLGA-01", "İngilizce", "MUHTEMEL_DUSMAN", "HF", "STANAG_4529", "VERI"},
         {"HERMES-4", "ATHENS-RELAY", "Yunanca", "DUSMAN", "VHF", "DMR_BAZ", "KRIPTO"},
-        {"HERMES-4", "KARTAL-1", "Yunanca", "DUSMAN", "VHF", "DMR_MOBIL", "VERI"},
+        {"HERMES-4", "KARTAL-1", "Yunanca", "DUSMAN", "HF", "MIL_188_141A", "VERI"},
+        {"TASK-SLEW-01", "AEGEAN-TASK-HQ", "İngilizce", "DUSMAN", "HF", "LINK_11_SLEW", "VERI"},
+        {"PACTOR-NET-5", "ISLAND-NODE", "İngilizce", "MUHTEMEL_DUSMAN", "HF", "PACTOR_3", "VERI"},
+        {"FUSION-MOBILE-9", "NORTH-RELAY", "Rusça", "DUSMAN", "VHF", "FUSION", "SES"},
         {"JAM-ALPHA-01", "SECTOR-JAM-NET", "Tanımsız", "DUSMAN", "VHF", "TANIMSIZ", "KARISTIRMA_GAYDA"},
         {"GRIFFIN-2", "SHADOW-03", "İngilizce", "MUHTEMEL_DUSMAN", "VHF", "DMR_MOBIL", "SES"}
     };

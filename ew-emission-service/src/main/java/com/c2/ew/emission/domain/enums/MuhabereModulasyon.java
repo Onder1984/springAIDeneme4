@@ -7,5 +7,13 @@ public enum MuhabereModulasyon {
     LSB,
     USB,
     FSK8,
-    CPSK2
+    FSK16,
+    CPSK2,
+    QAM64,
+    QAM28,
+    QAM128,
+    DPSK4,
+    DPSK,
+    ASK8,
+    ASK4
 }

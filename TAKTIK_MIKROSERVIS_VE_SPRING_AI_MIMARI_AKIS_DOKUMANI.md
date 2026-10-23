@@ -1,56 +1,55 @@
-# 🛡️ Taktik Elektronik Harp (EH / C2) Sistemi: Çift Mikroservis, Spring AI ve Taktik Konsol Mimari Akış Dokümanı
+# 🛡️ Taktik Elektronik Harp (EH / C2) Sistemi: Çift Mikroservis, Çift Bağımsız Web Uygulaması ve Spring AI Mimari Akış Dokümanı
 
-**Doküman Versiyonu:** 3.0.0 (Kurumsal Çift Mikroservis & Taktik Doktrin Tam Sürüm)  
-**Tarih:** 2026-10-20  
+**Doküman Versiyonu:** 4.0.0 (Dikey Ayrık Tam Mikroservis & Çift Bağımsız Web Uygulaması Sürümü)  
+**Tarih:** 2026-10-21  
 **Hedef Kitle:** Yazılım Mimarları, Sistem Mühendisleri, Elektronik Harp ve C2 Karar Destek Geliştiricileri  
 
 ---
 
 ## 1. YÖNETİCİ ÖZETİ VE MİMARİ VİZYON
 
-Bu doküman; **Taktik Elektronik Harp (EH / SIGINT / C2)** harekât sahasında görev yapan karar vericiler ve operatörler için geliştirilmiş olan **yapay zekâ tabanlı sorgulama, karar destek ve durumsal farkındalık platformunun** çift mikroservis ve mikro-frontend (Composer) mimarisini, veri akışını ve Spring AI orkestrasyonunu en ince teknik ayrıntısına kadar açıklar.
+Bu doküman; **Taktik Elektronik Harp (EH / SIGINT / C2)** harekât sahasında görev yapan karar vericiler ve operatörler için geliştirilmiş olan **yapay zekâ tabanlı sorgulama, karar destek ve durumsal farkındalık platformunun** çift mikroservis ve **çift bağımsız web uygulaması (Self-Contained Systems - SCS)** mimarisini, veri akışını ve Spring AI orkestrasyonunu en ince teknik ayrıntısına kadar açıklar.
 
-Sistem, geleneksel monolitik yapay zekâ uygulamalarının getirdiği performans darboğazlarını, veri şişkinliğini ve coupling (sıkı bağlılık) problemlerini aşmak amacıyla **iki bağımsız mikroservis** ve **merkezi bir Taktik Komutan Konsolu (Composer Frontend)** olarak yeniden yapılandırılmıştır:
+Sistem; geleneksel monolitik yapay zekâ uygulamalarının getirdiği performans darboğazlarını, gereksiz bundle yükünü ve ön yüzdeki state karmaşasını aşmak amacıyla **iki bağımsız backend mikroservisi** ve bunlara doğrudan bağlı **iki bağımsız ön yüz web uygulaması** olarak dikey kesitler (Vertical Slices) halinde yapılandırılmıştır:
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        MERKEZİ TAKTİK OPERATÖR KONSOLU (COMPOSER)                      │
-│                               React 18 + Vite (Port 3000)                              │
-│                                                                                        │
-│   ┌─────────────────────┐   ┌─────────────────────┐   ┌────────────────────────────┐   │
-│   │ 🧠 AI Taktik Copilot│   │ 📡 Radar (ELINT)    │   │ 📻 Muhabere (COMINT)       │   │
-│   │    Chat & Widget    │   │    Sanal Tablo      │   │    Sanal Tablo             │   │
-│   └──────────┬──────────┘   └──────────┬──────────┘   └─────────────┬──────────────┘   │
-└──────────────┼─────────────────────────┼────────────────────────────┼──────────────────┘
-               │                         │                            │
-    REST / JSON│                         │REST / JSON                 │REST / JSON
-    Port 8082  │                         │Port 8081                   │Port 8081
-               ▼                         ▼                            ▼
-┌──────────────────────────────┐       ┌─────────────────────────────────────────────────┐
-│     ew-copilot-service       │       │               ew-emission-service               │
-│         (Port 8082)          │       │                   (Port 8081)                   │
-│                              │       │                                                 │
-│ 🤖 Spring AI 1.x             │       │ 🛡️ PostgreSQL 18 + PostGIS Veri Deposu          │
-│ 🧠 Google Gemini AI Engine   │  REST │ ⚡ 1.170.000+ Radar, 1.170.000+ COMINT Kaydı     │
-│ 🛠️ @Tool Fonksiyonları       ├──────>│ 🔍 JPA Specification & Dinamik Criteria API     │
-│ 🎯 Skaler / Liste Niyetleri  │       │ 📊 SQL COUNT(*) ve Agregasyon Motoru            │
-│ 💬 Chat Memory (Oturum)      │       │ 📈 Korelasyon, Dalga Formu ve Dağılım Servisleri│
-└──────────────────────────────┘       └─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐       ┌──────────────────────────────────────────────┐
+│        TAKTIK YZ COPILOT KOKPİTİ             │       │      TAKTIK EH TELEMETRİ KONSOLU             │
+│        frontend-copilot (Port 3002)          │       │      frontend-emission (Port 3001)           │
+│                                              │       │                                              │
+│ 🤖 Spring AI & Google Gemini Chat            │       │ 📡 Radar (ELINT) Sanal Tablo                 │
+│ 📊 ECharts Analitik Dağılım Widget'ları      │       │ 📻 Muhabere (COMINT) Sanal Tablo             │
+│ 🛡️ Sabit Adımlı Haftalık Örümcek Ağı Grafiği │       │ 🔍 LOB / Kestirim Detay Çekmecesi (Drawer)   │
+└──────────────────────┬───────────────────────┘       └──────────────────────┬───────────────────────┘
+                       │                                                      │
+                       │ REST / JSON                                          │ REST / JSON
+                       │ Port 8082 (Proxy)                                    │ Port 8081 (Proxy)
+                       ▼                                                      ▼
+┌──────────────────────────────────────────────┐       ┌──────────────────────────────────────────────┐
+│             ew-copilot-service               │       │             ew-emission-service              │
+│                (Port 8082)                   │       │                 (Port 8081)                  │
+│                                              │       │                                              │
+│ 🤖 Spring AI 1.x                             │       │ 🛡️ PostgreSQL 18 + PostGIS Veri Deposu       │
+│ 🧠 Google Gemini AI Engine                   │  REST │ ⚡ 521.000+ Radar, 519.000+ COMINT Kaydı     │
+│ 🛠️ @Tool Fonksiyonları (Radar / Comint Tools) ├──────>│ 🔍 JPA Specification & Dinamik Criteria API  │
+│ 🎯 Skaler / Liste Niyet Ayrıştırma           │       │ 📊 SQL COUNT(*) ve Agregasyon Motoru         │
+│ 💬 Chat Memory (Oturum Yönetimi)             │       │ 📈 Korelasyon, Spektrum & Dağılım Servisleri │
+└──────────────────────────────────────────────┘       └──────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 2. SERVİS SINIRLARI VE SORUMLULUK MATRİSİ (BOUNDED CONTEXTS)
 
-Sistem Domain-Driven Design (DDD) ilkeleri doğrultusunda iki ana bağlama (Bounded Context) ayrılmıştır:
+Sistem Domain-Driven Design (DDD) ve Self-Contained Systems (SCS) ilkeleri doğrultusunda tam ayrık dikey katmanlara bölünmüştür:
 
-| Boyut / Yetkinlik | `ew-emission-service` (Veri Servisi) | `ew-copilot-service` (AI Karar Destek) | `frontend` (Taktik Konsol) |
-| :--- | :--- | :--- | :--- |
-| **Rol & Amaç** | Ham telemetri ve feda edilemez taktik verinin kalıcılığı, indekslenmesi, PostGIS geometrisi ve hızlı sorgulanması. | Doğal dil girdisini anlama, askeri doktrine göre niyet sınıflandırma, @Tool çağrıları üretme ve taktik brifing sentezleme. | Operatöre yüksek kontrastlı askeri koyu tema (MIL-Dark), sekmeli gezinme, canlı grafikler ve sohbet arayüzü sunma. |
-| **Çalışma Portu** | `http://localhost:8081` | `http://localhost:8082` | `http://localhost:3000` |
-| **Temel Teknolojiler** | Spring Boot 3.3+, Spring Data JPA, Hibernate 6, PostgreSQL 18, PostGIS, HikariCP. | Spring Boot 3.3+, Spring AI 1.x, Google Gemini (Flash-Lite / Pro), RestClient. | React 18, Vite, Ant Design 5 (Dark Mode), Apache ECharts, Axios. |
-| **Veritabanı Erişimi** | Doğrudan (Okuma/Yazma) - 2.3+ Milyon Kayıt. | **YOK** (Tamamen Stateless, Veri Servisi DTO'ları üzerinden REST ile haberleşir). | **YOK** (Vite Proxy üzerinden ilgili mikroservis uçlarına yönlenir). |
-| **Kritik Endpoint'ler** | `/api/v1/emissions/radar/query`<br>`/api/v1/emissions/radar/count`<br>`/api/v1/emissions/comint/query`<br>`/api/v1/emissions/comint/count`<br>`/api/v1/tactical/*` | `/api/v1/tactical/analyze`<br>`/api/v1/tactical/reset-session` | `/` (Composer Ana Kabuğu)<br>Taktik Sohbet / Tablolar / Harita Görünümleri |
+| Boyut / Yetkinlik | `ew-emission-service` (Veri Servisi) | `frontend-emission` (Telemetri Konsolu) | `ew-copilot-service` (AI Karar Destek) | `frontend-copilot` (AI Kokpiti) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Rol & Amaç** | Ham telemetri ve feda edilemez taktik verinin kalıcılığı, indekslenmesi, PostGIS geometrisi ve hızlı sorgulanması. | Algılayıcı ve veri operatörlerine hızlı, hafif ve odaklı Radar/COMINT telemetri tabloları ve detay çekmecesi sunma. | Doğal dil girdisini anlama, askeri doktrine göre niyet sınıflandırma, @Tool çağrıları üretme ve taktik brifing sentezleme. | Karar verici ve komutanlara sadece yapay zekâ sohbeti, analiz widget'ları ve taktik brifingler sunma. |
+| **Çalışma Portu** | `http://localhost:8081` | `http://localhost:3001` | `http://localhost:8082` | `http://localhost:3002` |
+| **Temel Teknolojiler** | Spring Boot 3.3+, Spring Data JPA, Hibernate 6, PostgreSQL 18, PostGIS, HikariCP. | React 19, Vite 8, Ant Design 6 (MIL-Dark), Axios, Dayjs. | Spring Boot 3.3+, Spring AI 1.x, Google Gemini (Flash-Lite / Pro), RestClient. | React 19, Vite 8, Ant Design 6, Apache ECharts, Marked, Axios. |
+| **Ön Yüz Bundle Yükü** | - | **~1.1 MB** (Çok Hafif, ECharts/Marked yükü YOK). | - | **~2.3 MB** (AI Markdown ve ECharts görselleştirme motorları). |
+| **Hedef Kullanıcı** | Backend API tüketicileri | Algılayıcı / Radar / Telsiz Operatörleri | Yapay Zekâ İstemcileri | Taktik Karar Vericiler / EH Komutanları |
 
 ---
 
@@ -127,7 +126,7 @@ Aşağıdaki diyagram, operatörün *"SP040 spot no'lu kaç kayıt var?"* veya *
 sequenceDiagram
     autonumber
     actor Operator as 🎖️ Operatör (Browser)
-    participant FE as 🖥️ Composer (React:3000)
+    participant FE as 🖥️ Copilot UI (React:3002)
     participant Copilot as 🧠 ew-copilot-service (8082)
     participant Gemini as 🤖 Google Gemini 2.5
     participant Emission as 🛡️ ew-emission-service (8081)
@@ -211,41 +210,63 @@ Sistemde bu problem **üç katmanlı bir savunma hattıyla** çözülmüştür:
 
 ---
 
-## 6. FRONTEND MİMARİSİ VE COMPOSER SEKME DÜZENİ
+## 6. ÇİFT BAĞIMSIZ WEB UYGULAMASI (SELF-CONTAINED SYSTEMS - SCS) MİMARİSİ
 
-Merkezi konsol (`frontend`), operatörün farklı taktik panellere tek tıkla ulaşmasını sağlayan bir **Composer** kabuğudur:
+Sistemde ön yüz katmanı, monolitik tek bir portal yerine **kullanıcı rolü**, **hata izolasyonu** ve **kaynak tüketimi** kriterleri gözetilerek **iki tamamen bağımsız web uygulaması** olarak ayrılmıştır:
 
 ```text
-frontend/src/
-├── App.jsx                     <-- Ana Composer Menü ve Sekme Yöneticisi (MIL-Dark Shell)
-├── components/
-│   ├── CopilotChat.jsx         <-- Bilişsel Yapay Zeka Sohbet Arayüzü & Widget Algılayıcı
-│   ├── RadarTable.jsx          <-- 1.17M Radar Kaydı için Yüksek Başarımlı Sanal Tablo
-│   ├── ComintTable.jsx         <-- 1.17M Muhabere Kaydı için Sanal Tablo & Çağrı Analizi
-│   ├── TacticalMap.jsx         <-- PostGIS Elips & LOB Görselleştirme Haritası
-│   └── widgets/
-│       ├── WaveformTimelineWidget.jsx  <-- RF Frekans/PRI/PW Değişim Çizelgesi (ECharts)
-│       ├── CallsignHeatmapWidget.jsx   <-- Telsiz Çağrı Çiftleri Etkileşim Isı Haritası
-│       ├── TacticalPieWidget.jsx       <-- Taktik Dağılım Donut/Pasta Grafiği
-│       ├── SpectrumOccupancyWidget.jsx <-- NATO Frekans Bandı Spektrum Doluluk Çizelgesi
-│       └── WeekdayRadarWidget.jsx      <-- 7 Günlük Aktivite Örümcek Ağı (Spider Web)
+EWSpringAIDeneme2/
+├── frontend-emission/               <-- 📡 Taktik Telemetri Konsolu (Port 3001)
+│   ├── vite.config.js               <-- Proxy: /api -> http://127.0.0.1:8081
+│   ├── src/
+│   │   ├── App.jsx                  <-- Radar & COMINT Sekmeli Harekât Konsolu
+│   │   └── components/
+│   │       ├── RadarTable.jsx       <-- 521K Radar Kaydı için Sayfalı Sanal Tablo
+│   │       ├── ComintTable.jsx      <-- 519K Telsiz Kaydı için Sayfalı Sanal Tablo
+│   │       └── DetailDrawer.jsx     <-- LOB & Kestirim Elips Detay Çekmecesi
+│
+└── frontend-copilot/                <-- 🧠 Taktik YZ Copilot Kokpiti (Port 3002)
+    ├── vite.config.js               <-- Proxy: /api/v1/tactical/analyze -> 8082, /api -> 8081
+    ├── src/
+    │   ├── App.jsx                  <-- AI Sohbet & Analitik Kokpit Kabuğu
+    │   └── components/
+    │       ├── CopilotChat.jsx      <-- Bilişsel YZ Sohbeti & Markdown Brifing
+    │       ├── WeekdayRadarDistributionWidget.jsx <-- Sabit Adımlı (50K) Haftalık Örümcek Ağı
+    │       ├── TacticalDistributionPieWidget.jsx  <-- Polarizasyon / Teşhis Donut Grafiği
+    │       ├── CallsignHeatmapWidget.jsx          <-- Telsiz Çağrı Çiftleri Isı Haritası
+    │       ├── RadarSpectrumOccupancyWidget.jsx   <-- NATO Frekans Spektrum Doluluğu
+    │       └── TacticalWaveformTimelineWidget.jsx <-- Dalga Formu (PRI/PW/Frekans) Çizelgesi
 ```
 
-### Vite API Proxy Yapılandırması ([`vite.config.js`](file:///c:/Users/onderproje/Desktop/AntigravitySpringAIDeneme4/frontend/vite.config.js)):
-Frontend tek bir domain üzerinden servis edilirken aradaki yönlendirmeyi Vite proxy şeffafça çözer:
-- `/api/v1/tactical/analyze` & `/api/v1/tactical/reset-session` -> `http://localhost:8082` (`ew-copilot-service`)
-- `/api/v1/tactical/emissions*` & `/api/v1/emissions/*` -> `http://localhost:8081` (`ew-emission-service`)
+---
+
+## 7. NEDEN İKİ AYRI WEB UYGULAMASI TERCİH EDİLDİ? (MİMARİ KARAR GEREKÇELERİ)
+
+1. **Ön Yüzde Ortak Canlı State İhtiyacının Bulunmaması (Zero State Coupling):**
+   Her iki servisin çalışma alanları bağımsızdır. `frontend-emission` doğrudan `ew-emission-service` (Port 8081) ile ham telemetri alışverişi yaparken, `frontend-copilot` bağımsız olarak `ew-copilot-service` (Port 8082) ile yapay zekâ analiz oturumu yürütür. İki ekran arasında paylaşılan bir Redux/Zustand durum yönetim ihtiyacı bulunmadığından, ayrım hiçbir senkronizasyon karmaşası üretmez.
+
+2. **Kullanıcı Rolü ve Persona Ayrımı (Persona Isolation):**
+   - **Taktik Telemetri Operatörü (`:3001`):** Sahadaki radarları, telsiz frekanslarını, LOB kestirimlerini ve coğrafi mevzileri izler. Ekranında yapay zekâ sohbet modülüne veya markdown derleyicilerine ihtiyaç duymaz.
+   - **Taktik Karar Verici / Komutan (`:3002`):** Milyonlarca satırlık ham telemetri tablolarıyla zaman kaybetmez; doğrudan doğal dille taktik durumu sorgular, Gemini tarafından üretilen özet brifingleri ve görsel analiz widget'larını değerlendirir.
+
+3. **Bundle Boyutu ve Bellek Tasarrufu:**
+   - `frontend-emission` sadece temel Ant Design ve veri tablolarını içerir; bundle boyutu **~1.1 MB**'a düşürülmüştür.
+   - `frontend-copilot` ise görselleştirme motorları (ECharts) ve Markdown derleyicisini barındırır.
+   Kullanıcı sadece ihtiyaç duyduğu uygulamayı yükler; tarayıcı belleği gereksiz kütüphanelerle şişirilmez.
+
+4. **Sıfır Hata Yayılımı (Zero Blast Radius):**
+   Yapay zekâ motorunda yaşanabilecek geçici bir API kotası aşımı veya analiz yoğunluğu, sahadaki telemetri masasını zerre kadar etkilemez. İki uygulama birbirinden fiziksel duvarlarla izoledir.
 
 ---
 
-## 7. HATA TOLERANSI VE DAYANIKLILIK (RESILIENCE)
+## 8. HATA TOLERANSI VE DAYANIKLILIK (RESILIENCE)
 
-1. **Servis İzolasyonu:** `ew-copilot-service` kapalı olsa veya Gemini API kotası aşılsa bile operatör arayüzdeki Radar ve COMINT tablolarını doğrudan `ew-emission-service` üzerinden sıfır kesintiyle incelemeye ve filtrelemeye devam edebilir.
+1. **Uygulama İzolasyonu:** `frontend-copilot` veya `ew-copilot-service` kapalı olsa bile operatör `http://localhost:3001` üzerinden radar ve telsiz yayınlarını sıfır kesintiyle izlemeye devam eder.
 2. **REST İstemci Geri Çekilme (Fallback):** `EmissionRestClient` içinde her REST çağrısı `try-catch` bloklarıyla korunur. Veri servisi geçici olarak yanıt veremezse `TacticalCountResultDto(0L, "Hata", "Veri servisine erişilemedi")` dönerek yapay zekanın çökmesi engellenir.
-3. **Veri Bütünlüğü ve Kalıcılık:** Her iki servisin yeniden başlatılması PostgreSQL'deki 2.3+ milyon hazır üretilmiş taktik kaydı kesinlikle silmez (`DataInitializer` kalıcılık kontrolü ile veriyi korur).
+3. **Veri Bütünlüğü ve Kalıcılık:** Servislerin veya ön yüzlerin yeniden başlatılması PostgreSQL'deki 1 milyondan fazla taktik kaydı kesinlikle etkilemez (`DataInitializer` kalıcılık kontrolü ile veriyi korur).
 
 ---
 
-## 8. SONUÇ
+## 9. SONUÇ
 
-Bu çift mikroservis mimarisi; yapay zekâ mantığını (`ew-copilot-service`), yüksek hacimli taktik telemetri veri ambarından (`ew-emission-service`) ve kullanıcı deneyiminden (`frontend`) tamamen izole etmiştir. Sayım sorularına özel geliştirilen hafif `count*` araçları ve frontend filtreleme mekanizması sayesinde sistem, askeri standartlarda deterministik, doğru ve görsel gürültüden arındırılmış bir C2 karar destek yeteneği kazanmıştır.
+Bu dikey ayrık çift mikroservis ve çift bağımsız web uygulaması mimarisi; yüksek hacimli taktik telemetri yönetimini (`ew-emission-service` + `frontend-emission:3001`) ile yapay zekâ bilişsel muhakeme kokpitini (`ew-copilot-service` + `frontend-copilot:3002`) birbirinden tam olarak izole etmiştir. Her iki uygulama kendi bağımsız URL'leri üzerinden, minimum kaynak tüketimiyle ve rol odaklı olarak taktik sahanın emrine sunulmuştur.

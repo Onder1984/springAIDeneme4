@@ -31,7 +31,8 @@ public class ComintEmissionTools {
 
     @Tool(description = "Elektronik Harp Muhabere (COMINT) telsiz ve ses yayınlarını çok kriterli filtrelerle sorgular. " +
         "Frekans aralığı (minFrekansMhz, maxFrekansMhz), Teşhis ('DÜŞMAN', 'DOST'), Lisan ('Türkçe', 'Rusça', 'Arapça'), " +
-        "Tip ('HF', 'VHF'), Haberleşme Şekli ('SES', 'KRIPTO', 'DARBE_PATLAMA'), Çağrı Adı, Protokol ve Zaman Aralığı destekler.")
+        "Tip ('HF', 'VHF'), Haberleşme Şekli ('SES', 'KRIPTO', 'DARBE_PATLAMA'), Çağrı Adı, " +
+        "Protokol ('STANAG_5065_MSK', 'STANAG_5065_FSK', 'STANAG_4529', 'MIL_188_141A', 'MIL_188_141B', 'LINK_11_CLEW', 'LINK_11_SLEW', 'PACTOR_2', 'PACTOR_3', 'CLOVER_2000', 'CLOVER_2500', 'FUSION', 'DMR_MOBIL', 'DMR_BAZ') ve Zaman Aralığı destekler.")
     public TacticalQueryResult<TacticalComintSummaryDto> queryComintEmissions(
         String teshisKimlik,
         String tip,

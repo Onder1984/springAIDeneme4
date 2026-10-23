@@ -78,6 +78,39 @@ public class TacticalController {
     }
 
     /**
+     * Taktik Harita ve Kesişim Isı Analizi için Ultra-Hafif Radar Emisyonları
+     */
+    @GetMapping({"/map/emissions", "/emissions/map"})
+    public ResponseEntity<List<TacticalMapItemDto>> getMapEmissions(
+        @RequestParam(defaultValue = "1000") int limit
+    ) {
+        return ResponseEntity.ok(emissionQueryService.getMapEmissions(limit));
+    }
+
+    /**
+     * Taktik Harita ve Kesişim Isı Analizi için Ultra-Hafif COMINT Kayıtları
+     */
+    @GetMapping({"/map/comints", "/comints/map", "/comints/all"})
+    public ResponseEntity<List<TacticalMapItemDto>> getMapComints(
+        @RequestParam(defaultValue = "1000") int limit
+    ) {
+        return ResponseEntity.ok(comintQueryService.getMapComints(limit));
+    }
+
+    /**
+     * Taktik Harita için Tek Seferde Tüm Müşterek (Radar + COMINT) Ultra-Hafif Veri Akışı
+     */
+    @GetMapping("/map/items")
+    public ResponseEntity<List<TacticalMapItemDto>> getMapItems(
+        @RequestParam(defaultValue = "1000") int limit
+    ) {
+        List<TacticalMapItemDto> all = new java.util.ArrayList<>();
+        all.addAll(emissionQueryService.getMapEmissions(limit));
+        all.addAll(comintQueryService.getMapComints(limit));
+        return ResponseEntity.ok(all);
+    }
+
+    /**
      * Muhabere (COMINT) Yayınları Sayfalı ve Filtreli Sorgulama (Ant Design Table Server-Side Pagination)
      */
     @GetMapping({"/comints", "/comint/emissions", "/comint"})
@@ -96,6 +129,7 @@ public class TacticalController {
         @RequestParam(required = false) Double maxGenlik,
         @RequestParam(required = false) String bolge,
         @RequestParam(required = false) String protokol,
+        @RequestParam(required = false) String modulasyon,
         @RequestParam(required = false) String cagriAdi,
         @RequestParam(required = false) String karsiCagriAdi,
         @RequestParam(required = false) String sortField,
@@ -105,7 +139,7 @@ public class TacticalController {
     ) {
         return ResponseEntity.ok(comintQueryService.getComintsPage(
             page, size, search, teshis, tip, lisan, haberlesme, kripto,
-            minFrekans, maxFrekans, minGenlik, maxGenlik, bolge, protokol,
+            minFrekans, maxFrekans, minGenlik, maxGenlik, bolge, protokol, modulasyon,
             cagriAdi, karsiCagriAdi,
             sortField, sortOrder, kayitTipi, zamanAraligi
         ));

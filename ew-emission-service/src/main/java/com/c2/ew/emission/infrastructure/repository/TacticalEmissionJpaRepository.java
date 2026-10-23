@@ -114,4 +114,14 @@ public interface TacticalEmissionJpaRepository extends JpaRepository<TacticalEmi
            "  AND l.son_tespit_zamani >= :baslangic AND l.son_tespit_zamani <= :bitis " +
            "ORDER BY l.son_tespit_zamani DESC LIMIT :limit", nativeQuery = true)
     List<Object[]> getRadarAllLobsWithTimeRange(@Param("baslangic") Instant baslangic, @Param("bitis") Instant bitis, @Param("limit") int limit);
+
+    @Query(value = "SELECT e.emission_id, e.kayit_tipi, e.yayin_enlem, e.yayin_boylam, " +
+           "       e.yayin_semi_major_meters, e.yayin_semi_minor_meters, e.yayin_orientation_degrees, " +
+           "       e.eh_unsuru_enlem, e.eh_unsuru_boylam, e.yon, " +
+           "       e.teshis_kimlik, e.radar_adi, e.eh_unsuru, " +
+           "       e.son_tespit_zamani, e.kestirim_id " +
+           "FROM tactical_emissions e " +
+           "ORDER BY e.son_tespit_zamani DESC LIMIT :limit", nativeQuery = true)
+    List<Object[]> findMapEmissionsNative(@Param("limit") int limit);
 }
+

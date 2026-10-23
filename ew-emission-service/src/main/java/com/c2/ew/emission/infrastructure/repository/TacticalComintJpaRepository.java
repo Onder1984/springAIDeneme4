@@ -230,4 +230,14 @@ public interface TacticalComintJpaRepository extends JpaRepository<TacticalComin
            "  AND l.son_tespit_zamani >= :baslangic AND l.son_tespit_zamani <= :bitis " +
            "ORDER BY l.son_tespit_zamani DESC LIMIT :limit", nativeQuery = true)
     List<Object[]> getComintAllLobsWithTimeRange(@Param("baslangic") Instant baslangic, @Param("bitis") Instant bitis, @Param("limit") int limit);
+
+    @Query(value = "SELECT c.comint_id, c.kayit_tipi, c.yayin_enlem, c.yayin_boylam, " +
+           "       c.yayin_semi_major_meters, c.yayin_semi_minor_meters, c.yayin_orientation_degrees, " +
+           "       c.eh_unsuru_enlem, c.eh_unsuru_boylam, c.yon, " +
+           "       c.teshis_kimlik, c.cagri_adi, c.eh_unsuru, " +
+           "       c.son_tespit_zamani, c.kestirim_id " +
+           "FROM tactical_comint c " +
+           "ORDER BY c.son_tespit_zamani DESC LIMIT :limit", nativeQuery = true)
+    List<Object[]> findMapComintsNative(@Param("limit") int limit);
 }
+

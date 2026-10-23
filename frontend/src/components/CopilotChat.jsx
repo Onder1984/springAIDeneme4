@@ -12,10 +12,12 @@ import {
   FireOutlined,
   PieChartOutlined,
   LineChartOutlined,
-  BarChartOutlined
+  BarChartOutlined,
+  GlobalOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 import { marked } from 'marked';
+import TacticalMapWidget from './TacticalMapWidget';
 import CallsignHeatmapWidget from './CallsignHeatmapWidget';
 import TacticalDistributionPieWidget from './TacticalDistributionPieWidget';
 import TacticalWaveformTimelineWidget from './TacticalWaveformTimelineWidget';
@@ -89,6 +91,24 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
 
     if (isCountPrompt) {
       return null;
+    }
+
+    // 0. Taktik Kestirim Haritası & Elips Kesişim Isı Haritası
+    const isMapPrompt =
+      p.includes('kestirim haritası') ||
+      p.includes('kestirim haritasi') ||
+      p.includes('elips haritası') ||
+      p.includes('elips haritasi') ||
+      p.includes('kestirim ısı haritası') ||
+      p.includes('kestirim isi haritasi') ||
+      p.includes('taktik harita') ||
+      p.includes('konum ısı') ||
+      p.includes('konum isi') ||
+      ((p.includes('harita') || p.includes('haritası') || p.includes('haritasi') || p.includes('haritada') || p.includes('coğrafi') || p.includes('cografi') || p.includes('mekansal') || p.includes('konum')) &&
+        (p.includes('kestirim') || p.includes('elips') || p.includes('kesişim') || p.includes('kesisim') || p.includes('lob') || p.includes('kerteriz') || p.includes('yoğunluk') || p.includes('yogunluk') || p.includes('yansıt') || p.includes('göster') || p.includes('çiz')));
+
+    if (isMapPrompt) {
+      return { type: 'TACTICAL_MAP' };
     }
 
     // 1. Telsiz Çağrı Adı Isı Haritası & İletişim Matrisi Tetikleyicileri
@@ -421,6 +441,21 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
         <Space size={6} wrap>
           <Button
             size="small"
+            type={activeWidget === 'TACTICAL_MAP' ? 'primary' : 'default'}
+            ghost={activeWidget === 'TACTICAL_MAP'}
+            icon={<GlobalOutlined style={{ color: activeWidget === 'TACTICAL_MAP' ? '#38bdf8' : '#94a3b8' }} />}
+            onClick={() => setActiveWidget(activeWidget === 'TACTICAL_MAP' ? null : 'TACTICAL_MAP')}
+            style={{
+              borderColor: activeWidget === 'TACTICAL_MAP' ? '#0284c7' : '#334155',
+              color: activeWidget === 'TACTICAL_MAP' ? '#38bdf8' : '#cbd5e1',
+              borderRadius: 6
+            }}
+          >
+            {activeWidget === 'TACTICAL_MAP' ? '🗺️ Harita & Isı (Açık)' : '🗺️ Taktik Harita'}
+          </Button>
+
+          <Button
+            size="small"
             type={activeWidget === 'CALLSIGN_HEATMAP' ? 'primary' : 'default'}
             ghost={activeWidget === 'CALLSIGN_HEATMAP'}
             icon={<FireOutlined style={{ color: activeWidget === 'CALLSIGN_HEATMAP' ? '#ef4444' : '#94a3b8' }} />}
@@ -623,6 +658,20 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
                           📻 Muhabere Tablosunda İncele
                         </Button>
 
+                        {/* Bu yanıta ait ilişkili taktik harita & kestirim ısı analizi butonu */}
+                        {(msg.relatedWidget === 'TACTICAL_MAP' || msg.relatedWidget?.type === 'TACTICAL_MAP') && (
+                          <Button
+                            size="small"
+                            type="primary"
+                            ghost
+                            icon={<GlobalOutlined style={{ color: '#38bdf8' }} />}
+                            onClick={() => setActiveWidget('TACTICAL_MAP')}
+                            style={{ borderColor: '#0284c7', color: '#38bdf8' }}
+                          >
+                            🗺️ Taktik Harita & Isı Görünümünü Aç
+                          </Button>
+                        )}
+
                         {/* Bu yanıta ait ilişkili taktik ısı haritası butonu */}
                         {(msg.relatedWidget === 'CALLSIGN_HEATMAP' || msg.relatedWidget?.type === 'CALLSIGN_HEATMAP') && (
                           <Button
@@ -819,6 +868,13 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
         minHeight: 0,
         transition: 'flex 0.25s ease'
       }}>
+        {activeWidget === 'TACTICAL_MAP' && (
+          <TacticalMapWidget
+            onClose={() => setActiveWidget(null)}
+            onSelectTarget={onSelectTarget}
+          />
+        )}
+
         {activeWidget === 'CALLSIGN_HEATMAP' && (
           <CallsignHeatmapWidget onClose={() => setActiveWidget(null)} />
         )}

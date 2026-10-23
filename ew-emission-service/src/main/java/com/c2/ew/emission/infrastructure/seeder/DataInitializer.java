@@ -39,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         seedRadarEmissions();
         seedComintEmissions();
+        seedTacticalMapClusters();
     }
 
     private void seedRadarEmissions() throws Exception {
@@ -207,20 +208,25 @@ public class DataInitializer implements CommandLineRunner {
 
         String[][] callsignPairs = {
             {"VOLGA-01", "VOLGA-04", "Rusça", "DUSMAN", "VHF", "DMR_MOBIL", "KRIPTO"},
-            {"VOLGA-04", "VOLGA-HQ", "Rusça", "DUSMAN", "HF", "BELIRSIZ", "SES"},
+            {"VOLGA-04", "VOLGA-HQ", "Rusça", "DUSMAN", "HF", "STANAG_5065_MSK", "SES"},
             {"ZARYA-3", "ZARYA-BASE", "Rusça", "DUSMAN", "VHF", "DMR_BAZ", "KRIPTO"},
             {"OMAR-11", "OMAR-ROLE", "Arapça", "DUSMAN", "VHF", "DMR_MOBIL", "SES"},
-            {"OMAR-ROLE", "KUZEY-HQ", "Arapça", "DUSMAN", "VHF", "DMR_BAZ", "SES"},
+            {"OMAR-ROLE", "KUZEY-HQ", "Arapça", "DUSMAN", "VHF", "DMR_BAZ_DMR_MOBIL", "SES"},
             {"TARIQ-02", "OMAR-11", "Arapça", "DUSMAN", "VHF", "D_STAR", "DARBE_PATLAMA"},
-            {"SAHRA-7", "KUZEY-HQ", "Arapça", "MUHTEMEL_DUSMAN", "HF", "BELIRSIZ", "SES"},
+            {"SAHRA-7", "KUZEY-HQ", "Arapça", "MUHTEMEL_DUSMAN", "HF", "STANAG_4529", "SES"},
             {"JAM-ALPHA-01", "SECTOR-JAM-NET", "Tanımsız", "DUSMAN", "VHF", "TANIMSIZ", "KARISTIRMA_GAYDA"},
             {"ELECTRON-NOISE", "TARGET-NET", "Tanımsız", "DUSMAN", "VHF", "TANIMSIZ", "KARISTIRMA_GURULTU"},
             {"AEGEAN-PATROL-1", "RHODES-BASE", "Yunanca", "DUSMAN", "VHF", "DMR_MOBIL", "SES"},
-            {"AEGEAN-PATROL-2", "ATHENS-RELAY", "Yunanca", "MUHTEMEL_DUSMAN", "HF", "BELIRSIZ", "VERI"},
+            {"AEGEAN-PATROL-2", "ATHENS-RELAY", "Yunanca", "MUHTEMEL_DUSMAN", "HF", "MIL_188_141A", "VERI"},
             {"HERMES-4", "ATHENS-RELAY", "Yunanca", "DUSMAN", "VHF", "DMR_BAZ", "KRIPTO"},
             {"KARTAL-1", "KARTAL-KOMUTA", "Türkçe", "DOST", "VHF", "DMR_MOBIL", "KRIPTO"},
             {"PARS-02", "HILAL-BAZ", "Türkçe", "DOST", "VHF", "DMR_BAZ", "SES"},
-            {"GOKTURK-3", "ANKARA-MERKEZ", "Türkçe", "DOST", "HF", "BELIRSIZ", "VERI"},
+            {"GOKTURK-3", "ANKARA-MERKEZ", "Türkçe", "DOST", "HF", "LINK_11_CLEW", "VERI"},
+            {"TASK-SLEW-01", "AEGEAN-TASK-HQ", "İngilizce", "DUSMAN", "HF", "LINK_11_SLEW", "VERI"},
+            {"TACTICAL-ALE-02", "DESERT-BASE", "Arapça", "DUSMAN", "HF", "MIL_188_141B", "VERI"},
+            {"PACTOR-NET-5", "ISLAND-NODE", "İngilizce", "MUHTEMEL_DUSMAN", "HF", "PACTOR_3", "VERI"},
+            {"CLOVER-LINK-1", "COAST-STATION", "Yunanca", "DUSMAN", "HF", "CLOVER_2000", "VERI"},
+            {"FUSION-MOBILE-9", "NORTH-RELAY", "Rusça", "DUSMAN", "VHF", "FUSION", "SES"},
             {"NATO-TASK-09", "MED-AIR-CONTROL", "İngilizce", "DOST", "VHF", "DMR_MOBIL", "SES"}
         };
 
@@ -238,7 +244,12 @@ public class DataInitializer implements CommandLineRunner {
         };
 
         VeriKaynagi[] veriKaynaklari = VeriKaynagi.values();
-        MuhabereModulasyon[] modList = {MuhabereModulasyon.FM, MuhabereModulasyon.AM, MuhabereModulasyon.LSB, MuhabereModulasyon.USB, MuhabereModulasyon.FSK8, MuhabereModulasyon.CPSK2};
+        MuhabereModulasyon[] modList = {
+            MuhabereModulasyon.FM, MuhabereModulasyon.AM, MuhabereModulasyon.LSB, MuhabereModulasyon.USB,
+            MuhabereModulasyon.FSK8, MuhabereModulasyon.FSK16, MuhabereModulasyon.CPSK2,
+            MuhabereModulasyon.QAM64, MuhabereModulasyon.QAM28, MuhabereModulasyon.DPSK4,
+            MuhabereModulasyon.DPSK, MuhabereModulasyon.ASK8, MuhabereModulasyon.ASK4
+        };
         CalismaSekli[] calismaList = CalismaSekli.values();
         HedefKaynagi[] kaynakList = HedefKaynagi.values();
 
@@ -336,4 +347,152 @@ public class DataInitializer implements CommandLineRunner {
         comintRepo.saveAll(comints);
         log.info("✅ [DATA SEEDER] 120 adet Taktik Muhabere (COMINT) yayını başarıyla PostgreSQL'e kaydedildi.");
     }
+
+    /**
+     * 🗺️ Taktik Harita ve Kesişim Isı Analizi Motoru için 5 Ana Harekât Sektöründe
+     * Birbiriyle Kesişen Yoğun Hata Elipsi Kümeleri Üretir.
+     */
+    private void seedTacticalMapClusters() {
+        if (emissionRepo.existsById("CLUSTER-EGE-R01") && comintRepo.existsById("CLUSTER-EGE-C01")) {
+            log.info("🛡️ [TAKTIK KUMELER MEVCUT] 5 Sektörlük Müşterek Kesişim Kümeleri PostgreSQL'de hazır.");
+            return;
+        }
+
+        log.info("🚀 [TAKTIK KUMELER SEEDING] Ege, Doğu Akdeniz, Marmara, Karadeniz ve Güneydoğu için kesişen elips kümeleri üretiliyor...");
+
+        record SectorCluster(String code, String name, double centerLat, double centerLon) {}
+
+        List<SectorCluster> sectors = List.of(
+            new SectorCluster("EGE", "Ege Denizi / Çeşme-Sakız Açıkları", 38.35, 26.38),
+            new SectorCluster("AKD", "Doğu Akdeniz / Kıbrıs Kuzeyi", 35.82, 33.25),
+            new SectorCluster("MAR", "Kuzey Ege / Çanakkale Boğaz Yaklaşma", 40.12, 26.20),
+            new SectorCluster("KRD", "Karadeniz / Kırım Güneyi Sektörü", 42.45, 34.50),
+            new SectorCluster("GND", "Güneydoğu Hudut Hattı / Şırnak-Tel Rıfat", 37.15, 42.15)
+        );
+
+        String[] radarModels = {
+            "AN/SPY-1D Aegis Fırkateyn", "92N6E Grave Stone (S-400)", "Pantsir-S1 1RS2-1E",
+            "AN/MPQ-53 (Patriot PAC-3)", "96L6E Çift Taraflı Arama Radarı", "Nebo-M VHF/L/S Radar Kompleksi",
+            "AN/MPQ-64 Sentinel", "Buk-M2 9S36 Angara", "Tor-M2 Uçaksavar Arama Radarı", "KORAL ED/ET Elektronik Harp"
+        };
+
+        MuhabereProtokol[] comintProtocols = {
+            MuhabereProtokol.STANAG_5065_MSK, MuhabereProtokol.STANAG_5065_FSK, MuhabereProtokol.LINK_11_CLEW, MuhabereProtokol.LINK_11_SLEW,
+            MuhabereProtokol.MIL_188_141B, MuhabereProtokol.DMR_BAZ_DMR_MOBIL, MuhabereProtokol.STANAG_4529
+        };
+
+        List<TacticalEmissionEntity> radarList = new ArrayList<>();
+        List<TacticalComintEntity> comintList = new ArrayList<>();
+        Random rnd = new Random(999);
+
+        for (SectorCluster sc : sectors) {
+            // Her sektör için 9 adet birbiriyle kesişen Radar Kestirim Elipsi
+            for (int i = 1; i <= 9; i++) {
+                TacticalEmissionEntity e = new TacticalEmissionEntity();
+                e.setId(String.format("CLUSTER-%s-R%02d", sc.code(), i));
+                e.setVeriKaynagi(i % 2 == 0 ? VeriKaynagi.DENIZ : VeriKaynagi.KARA);
+                e.setKuvvetSiraNo(String.format("KUV-MAP-%s-R%02d", sc.code(), i));
+                e.setUstBirlikRef("Müşterek Taktik EH Görev Grubu");
+                e.setEhUnsuru("TCG-GÖKSU F497 ESM / REDET-II Bataryası");
+
+                // Sensör konumu
+                double sensorLat = sc.centerLat() - 0.4 + (rnd.nextDouble() * 0.2);
+                double sensorLon = sc.centerLon() - 0.4 + (rnd.nextDouble() * 0.2);
+                e.setEhUnsuruEnlem(sensorLat);
+                e.setEhUnsuruBoylam(sensorLon);
+                e.setEhUnsuruIrtifa(250.0);
+
+                // Hedef Odak Merkezi (Küme merkezine çok yakın, 500m - 2000m sapma)
+                double offsetLat = (rnd.nextDouble() - 0.5) * 0.025; // ~1-2 km
+                double offsetLon = (rnd.nextDouble() - 0.5) * 0.030;
+                double tLat = sc.centerLat() + offsetLat;
+                double tLon = sc.centerLon() + offsetLon;
+                e.setYayinEnlem(tLat);
+                e.setYayinBoylam(tLon);
+
+                // Yarıçaplar 3000m - 5000m arasında olduğu için TÜM ELİPSLER MERKEZDE KESİŞİR!
+                e.setYayinSemiMajorMeters(3200.0 + rnd.nextInt(2000));
+                e.setYayinSemiMinorMeters(1400.0 + rnd.nextInt(900));
+                // Farklı açılar (kesişim yıldızı oluşturur)
+                e.setYayinOrientationDegrees((double) ((i * 37) % 180));
+
+                double dLat = tLat - sensorLat;
+                double dLon = tLon - sensorLon;
+                e.setYon((Math.toDegrees(Math.atan2(dLon, dLat)) + 360.0) % 360.0);
+
+                e.setKayitTipi(KayitTipi.KESTIRIM_ELIPS);
+                e.setHedefYerBilgisi(sc.name());
+                e.setHedefMevziBilgisi("Müşterek Tehdit Mevzii #" + i);
+                e.setTeshisKimlik(i <= 7 ? TeshisKimlik.DUSMAN : TeshisKimlik.MUHTEMEL_DUSMAN);
+                e.setRadarAdi(radarModels[i % radarModels.length]);
+                e.setSpotNo(String.format("SP%03d", 40 + i));
+                e.setMinFrekansMhz(9200.0 + i * 20);
+                e.setMaxFrekansMhz(9350.0 + i * 20);
+                e.setMinPriMicroSec(650.0 + i * 15);
+                e.setMaxPriMicroSec(850.0 + i * 15);
+                e.setMinPwMicroSec(1.5);
+                e.setMaxPwMicroSec(3.5);
+                e.setPulseCw(PulseCw.PULSE);
+                e.setEtUygulamaDurumu(i % 3 == 0 ? EtUygulamaDurumu.UYGULANIYOR : EtUygulamaDurumu.UYGULANMIYOR);
+                e.setTaciz(i % 2 == 0);
+
+                // Çok taze tespit (Son 5 dakika ile 1.5 saat arası)
+                Instant detectTime = Instant.now().minus(5 + rnd.nextInt(90), ChronoUnit.MINUTES);
+                e.setSonTespitZamani(detectTime);
+                e.setIlkTespitZamani(detectTime.minus(30, ChronoUnit.MINUTES));
+                e.setSureSn(600.0 + rnd.nextInt(1200));
+
+                radarList.add(e);
+            }
+
+            // Her sektör için 5 adet COMINT Kestirim Elipsi
+            for (int j = 1; j <= 5; j++) {
+                TacticalComintEntity c = new TacticalComintEntity();
+                c.setId(String.format("CLUSTER-%s-C%02d", sc.code(), j));
+                c.setVeriKaynagi(VeriKaynagi.KARA);
+                c.setKuvvetSiraNo(String.format("KUV-MAP-%s-C%02d", sc.code(), j));
+                c.setGoreviIcraEdenUstBirlik("Müşterek Taktik SIGINT Merkezi");
+                c.setGoreviIcraEdenEhUnsuru("DF/ED Sabit İstasyon #2");
+
+                double offsetLat = (rnd.nextDouble() - 0.5) * 0.020;
+                double offsetLon = (rnd.nextDouble() - 0.5) * 0.025;
+                double tLat = sc.centerLat() + offsetLat;
+                double tLon = sc.centerLon() + offsetLon;
+                c.setYayinEnlem(tLat);
+                c.setYayinBoylam(tLon);
+
+                c.setYayinSemiMajorMeters(2800.0 + rnd.nextInt(1800));
+                c.setYayinSemiMinorMeters(1200.0 + rnd.nextInt(700));
+                c.setYayinOrientationDegrees((double) ((j * 43) % 180));
+
+                c.setKayitTipi(KayitTipi.KESTIRIM_ELIPS);
+                c.setHedefYerBilgisi(sc.name());
+                c.setTeshisKimlik(TeshisKimlik.DUSMAN);
+                c.setCagriAdi("VOLGA-" + (10 + j));
+                c.setKarsiCagriAdi("DNIPRO-" + (20 + j));
+                c.setProtokol(comintProtocols[j % comintProtocols.length]);
+                c.setMinFrekansMhz(145.5 + j * 2.5);
+                c.setMaxFrekansMhz(147.0 + j * 2.5);
+                c.setBantGenisligiHz(25000.0);
+                c.setGenlikDbm(-62.0);
+
+                Instant detectTime = Instant.now().minus(10 + rnd.nextInt(75), ChronoUnit.MINUTES);
+                c.setSonTespitZamani(detectTime);
+                c.setIlkTespitZamani(detectTime.minus(45, ChronoUnit.MINUTES));
+                c.setSureSn(300.0 + rnd.nextInt(600));
+
+                comintList.add(c);
+            }
+        }
+
+        if (!emissionRepo.existsById("CLUSTER-EGE-R01")) {
+            emissionRepo.saveAll(radarList);
+        }
+        if (!comintRepo.existsById("CLUSTER-EGE-C01")) {
+            comintRepo.saveAll(comintList);
+        }
+        log.info("✅ [TAKTIK KUMELER TAMAMLANDI] 5 Sektör için {} Radar + {} COMINT kesişen kestirim elipsi başarıyla kaydedildi!",
+            radarList.size(), comintList.size());
+    }
 }
+

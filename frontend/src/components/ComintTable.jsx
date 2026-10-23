@@ -41,6 +41,8 @@ const ALL_COMINT_COLUMNS = [
   { key: 'lisan', label: 'Lisan' },
   { key: 'tip', label: 'Bant / Tip' },
   { key: 'haberlesmeSekli', label: 'Haberleşme Şekli' },
+  { key: 'protokol', label: 'Protokol' },
+  { key: 'modulasyon', label: 'Modülasyon' },
   { key: 'frekans', label: 'Frekans (MHz)' },
   { key: 'kriptoluMu', label: 'Kripto Durumu' },
   { key: 'genlikDbm', label: 'Sinyal Gücü (dBm)' },
@@ -78,6 +80,7 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
   const [maxGenlik, setMaxGenlik] = useState(null);
   const [bolgeFilter, setBolgeFilter] = useState('');
   const [protokolFilter, setProtokolFilter] = useState(null);
+  const [modulasyonFilter, setModulasyonFilter] = useState(null);
 
   // Sütun Yönetimi
   const [visibleColumns, setVisibleColumns] = useState(ALL_COMINT_COLUMNS.map(c => c.key));
@@ -116,6 +119,7 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
         maxGenlik: adv.maxGenlik ?? maxGenlik ?? undefined,
         bolge: adv.bolgeFilter ?? (bolgeFilter || undefined),
         protokol: adv.protokolFilter ?? protokolFilter ?? undefined,
+        modulasyon: adv.modulasyonFilter ?? modulasyonFilter ?? undefined,
         zamanAraligi: adv.zamanAraligiFilter !== undefined ? (adv.zamanAraligiFilter || undefined) : (zamanAraligiFilter || undefined),
         sortField: sf || undefined,
         sortOrder: so || undefined
@@ -132,7 +136,7 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
   }, [
     page, pageSize, searchText, teshisFilter, kayitTipiFilter, tipFilter, lisanFilter, haberlesmeFilter, kriptoFilter,
     cagriAdiFilter, karsiCagriAdiFilter, minFrekans, maxFrekans, minGenlik, maxGenlik, bolgeFilter, protokolFilter,
-    zamanAraligiFilter, sortField, sortOrder
+    modulasyonFilter, zamanAraligiFilter, sortField, sortOrder
   ]);
 
   useEffect(() => {
@@ -162,7 +166,7 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
   const handleApplyAdvancedFilters = () => {
     setPage(1);
     fetchComints(1, pageSize, searchText, teshisFilter, tipFilter, lisanFilter, haberlesmeFilter, kriptoFilter, sortField, sortOrder, {
-      cagriAdiFilter, karsiCagriAdiFilter, minFrekans, maxFrekans, minGenlik, maxGenlik, bolgeFilter, protokolFilter, zamanAraligiFilter
+      cagriAdiFilter, karsiCagriAdiFilter, minFrekans, maxFrekans, minGenlik, maxGenlik, bolgeFilter, protokolFilter, modulasyonFilter, zamanAraligiFilter
     }, kayitTipiFilter);
   };
 
@@ -183,9 +187,10 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
     setMaxGenlik(null);
     setBolgeFilter('');
     setProtokolFilter(null);
+    setModulasyonFilter(null);
     setPage(1);
     fetchComints(1, pageSize, '', null, null, null, null, null, sortField, sortOrder, {
-      cagriAdiFilter: '', karsiCagriAdiFilter: '', minFrekans: null, maxFrekans: null, minGenlik: null, maxGenlik: null, bolgeFilter: '', protokolFilter: null, zamanAraligiFilter: null
+      cagriAdiFilter: '', karsiCagriAdiFilter: '', minFrekans: null, maxFrekans: null, minGenlik: null, maxGenlik: null, bolgeFilter: '', protokolFilter: null, modulasyonFilter: null, zamanAraligiFilter: null
     }, null);
   };
 
@@ -201,7 +206,7 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
     setSortOrder(so);
 
     fetchComints(newPage, newSize, searchText, teshisFilter, tipFilter, lisanFilter, haberlesmeFilter, kriptoFilter, sf, so, {
-      cagriAdiFilter, karsiCagriAdiFilter, minFrekans, maxFrekans, minGenlik, maxGenlik, bolgeFilter, protokolFilter
+      cagriAdiFilter, karsiCagriAdiFilter, minFrekans, maxFrekans, minGenlik, maxGenlik, bolgeFilter, protokolFilter, modulasyonFilter
     }, kayitTipiFilter);
   };
 
@@ -377,6 +382,22 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
       }
     },
     {
+      title: 'Protokol',
+      dataIndex: 'protokol',
+      key: 'protokol',
+      width: 145,
+      sorter: true,
+      render: (val) => val ? <Tag color="cyan">{val}</Tag> : '-'
+    },
+    {
+      title: 'Modülasyon',
+      dataIndex: 'modulasyon',
+      key: 'modulasyon',
+      width: 125,
+      sorter: true,
+      render: (val) => val ? <Tag color="geekblue">{val}</Tag> : '-'
+    },
+    {
       title: 'Frekans (MHz)',
       dataIndex: 'minFrekansMhz',
       key: 'frekans',
@@ -461,7 +482,7 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
   const columns = allColumns.filter(col => visibleColumns.includes(col.key));
 
   const hasAdvancedFilters = Boolean(
-    cagriAdiFilter || karsiCagriAdiFilter || minFrekans || maxFrekans || minGenlik || maxGenlik || bolgeFilter || protokolFilter
+    cagriAdiFilter || karsiCagriAdiFilter || minFrekans || maxFrekans || minGenlik || maxGenlik || bolgeFilter || protokolFilter || modulasyonFilter
   );
 
   return (
@@ -693,8 +714,49 @@ export default function ComintTable({ onSelectComint, initialFilter }) {
                 options={[
                   { label: 'DMR Mobil', value: 'DMR_MOBIL' },
                   { label: 'DMR Baz İstasyonu', value: 'DMR_BAZ' },
+                  { label: 'DMR Baz / DMR Mobil', value: 'DMR_BAZ_DMR_MOBIL' },
                   { label: 'D-Star Dijital', value: 'D_STAR' },
+                  { label: 'STANAG 5065 MSK', value: 'STANAG_5065_MSK' },
+                  { label: 'STANAG 5065 FSK', value: 'STANAG_5065_FSK' },
+                  { label: 'STANAG 4529', value: 'STANAG_4529' },
+                  { label: 'MIL-STD-188-141A (ALE)', value: 'MIL_188_141A' },
+                  { label: 'MIL-STD-188-141B (ALE)', value: 'MIL_188_141B' },
+                  { label: 'Link-11 (CLEW)', value: 'LINK_11_CLEW' },
+                  { label: 'Link-11 (SLEW)', value: 'LINK_11_SLEW' },
+                  { label: 'PACTOR-II', value: 'PACTOR_2' },
+                  { label: 'PACTOR-III', value: 'PACTOR_3' },
+                  { label: 'Clover-2000', value: 'CLOVER_2000' },
+                  { label: 'Clover-2500', value: 'CLOVER_2500' },
+                  { label: 'Yaesu System Fusion', value: 'FUSION' },
+                  { label: 'Belirsiz', value: 'BELIRSIZ' },
                   { label: 'Tanımsız / Standart Telsiz', value: 'TANIMSIZ' }
+                ]}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Text style={{ fontSize: 12, color: '#94a3b8' }}>Muhabere Modülasyonu:</Text>
+              <Select
+                placeholder="Modülasyon seçiniz"
+                value={modulasyonFilter}
+                onChange={setModulasyonFilter}
+                allowClear
+                style={{ width: '100%', marginTop: 4 }}
+                options={[
+                  { label: 'FM (Frekans Modülasyonu)', value: 'FM' },
+                  { label: 'AM (Genlik Modülasyonu)', value: 'AM' },
+                  { label: 'USB (Üst Yan Bant)', value: 'USB' },
+                  { label: 'LSB (Alt Yan Bant)', value: 'LSB' },
+                  { label: 'FSK-16 (16 Seviyeli FSK)', value: 'FSK16' },
+                  { label: 'FSK-8 (8 Seviyeli FSK)', value: 'FSK8' },
+                  { label: 'CPSK-2 (Sürekli Faz)', value: 'CPSK2' },
+                  { label: 'QAM-64 (64-QAM)', value: 'QAM64' },
+                  { label: 'QAM-28 (28-QAM)', value: 'QAM28' },
+                  { label: 'QAM-128 (128-QAM)', value: 'QAM128' },
+                  { label: 'DPSK-4 (4-Faz DPSK)', value: 'DPSK4' },
+                  { label: 'DPSK (Diferansiyel Faz)', value: 'DPSK' },
+                  { label: 'ASK-8 (8-ASK)', value: 'ASK8' },
+                  { label: 'ASK-4 (4-ASK)', value: 'ASK4' },
+                  { label: 'Belirsiz', value: 'BELIRSIZ' }
                 ]}
               />
             </Col>

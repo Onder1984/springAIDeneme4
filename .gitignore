@@ -34,8 +34,11 @@ Desktop.ini
 .DS_Store
 
 ### Frontend & Logs ###
-frontend/node_modules/
-frontend/dist/
-frontend/test-results/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+**/test-results/
 *.log
 scratch/
+
