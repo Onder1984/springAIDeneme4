@@ -168,3 +168,27 @@ body {
 .ant-table-tbody > tr:hover > td {
   background: rgba(56, 189, 248, 0.05) !important;
 }
+
+/* MapLibre Tactical Dark Popup Styling */
+.maplibregl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+}
+.maplibregl-popup-tip {
+  border-top-color: #38bdf8 !important;
+  border-bottom-color: #38bdf8 !important;
+}
+.maplibregl-popup-close-button {
+  color: #94a3b8 !important;
+  font-size: 16px !important;
+  padding: 4px 8px !important;
+  right: 4px !important;
+  top: 4px !important;
+}
+.maplibregl-popup-close-button:hover {
+  color: #ef4444 !important;
+  background: transparent !important;
+}
+

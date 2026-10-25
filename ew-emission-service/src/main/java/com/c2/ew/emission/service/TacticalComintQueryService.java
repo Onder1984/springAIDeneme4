@@ -387,7 +387,14 @@ public class TacticalComintQueryService {
                 toStringValHelper(r[12]),              // ehUnsuru
                 sonTespit,                             // sonTespitZamani
                 formatTimestampObj(r[13]),             // sonTespitZamaniFormatted
-                toStringValHelper(r[14])               // kestirimId
+                toStringValHelper(r[14]),              // kestirimId
+                toDoubleHelper(r.length > 15 ? r[15] : null), // minFrekansMhz
+                toDoubleHelper(r.length > 16 ? r[16] : null), // maxFrekansMhz
+                null, null, // minPri, maxPri
+                null, null, // minPw, maxPw
+                null, null, null, // modulasyon, pulseCw, polarizasyon
+                null, null, // platformOrtami, platformTipi
+                null, null  // hss, radarGorevi
             ));
         }
         return items;

@@ -51,6 +51,7 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
   const [occupancyConfig, setOccupancyConfig] = useState({ timeRange: 'SON_24_SAAT', identities: ['DUSMAN'] });
   const [timelineConfig, setTimelineConfig] = useState({ source: 'RADAR', targetKey: 'SP048' });
   const [weekdayRadarConfig, setWeekdayRadarConfig] = useState({ source: 'TUMU', recordType: 'TUMU', timeRange: 'ALL' });
+  const [mapConfig, setMapConfig] = useState({ minIntersectionFilter: 3, discipline: 'TUMU', timeRange: 'SON_24_SAAT', focusZoneNumber: null, trackKey: null, trackSource: 'AUTO' });
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -93,7 +94,75 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
       return null;
     }
 
-    // 0. Taktik Kestirim Haritası & Elips Kesişim Isı Haritası
+    // 0.A. Hedef Kinematik İntikal ve Konum Geçmişi İzi (Track) Tespiti
+    const isTrackPrompt =
+      p.includes('konum geçmişi') ||
+      p.includes('konum gecmisi') ||
+      p.includes('intikal') ||
+      p.includes('hareket izi') ||
+      p.includes('rota') ||
+      p.includes('nereden nereye') ||
+      p.includes('nerelerden geçti') ||
+      p.includes('nerelerden gecti') ||
+      p.includes('taktik iz') ||
+      p.includes('hareket geçmişi') ||
+      p.includes('track');
+
+    const trackToolLog = executionLogs.find((log) =>
+      log.includes('getKinematicTargetTrack') || log.includes('/api/v1/tactical/track')
+    );
+
+    if (isTrackPrompt || trackToolLog) {
+      let src = 'AUTO';
+      let key = null;
+
+      if (trackToolLog) {
+        const srcMatch = trackToolLog.match(/source=([A-Za-z]+)/);
+        const keyMatch = trackToolLog.match(/targetKey=([A-Za-z0-9\-_]+)/);
+        if (srcMatch && srcMatch[1] !== 'null') src = srcMatch[1].toUpperCase();
+        if (keyMatch && keyMatch[1] !== 'null') key = keyMatch[1].toUpperCase();
+      }
+
+      if (!key) {
+        const spotMatch = p.match(/\b(sp\d{1,4})\b/i);
+        if (spotMatch) {
+          key = spotMatch[1].toUpperCase();
+          src = 'RADAR';
+        } else {
+          const callMatch = p.match(/\b(volga-\d+|omar-\d+|kartal-\d+|shadow-\d+|hermes-\d+|nato-task-\d+)\b/i);
+          if (callMatch) {
+            key = callMatch[1].toUpperCase();
+            src = 'COMINT';
+          } else {
+            const emiMatch = p.match(/\b(emi-live-[a-f0-9]+|com-live-[a-f0-9]+|cluster-[a-z0-9\-]+)\b/i);
+            if (emiMatch) {
+              key = emiMatch[1].toUpperCase();
+            } else if (p.includes('tor-m2') || p.includes('tor')) {
+              key = 'SP072';
+              src = 'RADAR';
+            } else if (p.includes('nebo-m') || p.includes('nebo')) {
+              key = 'Nebo-M';
+              src = 'RADAR';
+            } else if (p.includes('s-400') || p.includes('grave stone')) {
+              key = '92N6E';
+              src = 'RADAR';
+            } else if (p.includes('patriot')) {
+              key = 'SP048';
+              src = 'RADAR';
+            }
+          }
+        }
+      }
+
+      return {
+        type: 'TACTICAL_MAP',
+        trackKey: key || 'SP072',
+        trackSource: src
+      };
+    }
+
+    // 0.B. Taktik Kestirim Haritası & Elips Kesişim Isı Haritası
+    const intersectionToolLog = executionLogs.find((log) => log.includes('analyzeIntersectionZones'));
     const isMapPrompt =
       p.includes('kestirim haritası') ||
       p.includes('kestirim haritasi') ||
@@ -105,10 +174,57 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
       p.includes('konum ısı') ||
       p.includes('konum isi') ||
       ((p.includes('harita') || p.includes('haritası') || p.includes('haritasi') || p.includes('haritada') || p.includes('coğrafi') || p.includes('cografi') || p.includes('mekansal') || p.includes('konum')) &&
-        (p.includes('kestirim') || p.includes('elips') || p.includes('kesişim') || p.includes('kesisim') || p.includes('lob') || p.includes('kerteriz') || p.includes('yoğunluk') || p.includes('yogunluk') || p.includes('yansıt') || p.includes('göster') || p.includes('çiz')));
+        (p.includes('kestirim') || p.includes('elips') || p.includes('kesişim') || p.includes('kesisim') || p.includes('lob') || p.includes('kerteriz') || p.includes('yoğunluk') || p.includes('yogunluk') || p.includes('yansıt') || p.includes('göster') || p.includes('çiz'))) ||
+      Boolean(intersectionToolLog);
 
     if (isMapPrompt) {
-      return { type: 'TACTICAL_MAP' };
+      let minThreshold = 3;
+      let disc = 'TUMU';
+      let time = 'SON_24_SAAT';
+      let zoneNum = null;
+
+      if (intersectionToolLog) {
+        const minMatch = intersectionToolLog.match(/minOverlaps=(\d+)/);
+        if (minMatch) minThreshold = parseInt(minMatch[1], 10);
+        const zoneMatch = intersectionToolLog.match(/zoneNumber=(\d+)/);
+        if (zoneMatch) zoneNum = parseInt(zoneMatch[1], 10);
+      }
+
+      // Prompt analizi ile dinamik kriter yakalama
+      if (p.includes('2 ve fazla') || p.includes('2 veya daha') || p.includes('kriter 2') || p.includes('2 elips') || p.includes('en az 2')) {
+        minThreshold = 2;
+      } else if (p.includes('3 ve fazla') || p.includes('kriter 3') || p.includes('en az 3')) {
+        minThreshold = 3;
+      }
+
+      if (p.includes('sadece radar') || (p.includes('radar') && !p.includes('muhabere') && !p.includes('comint') && !p.includes('telsiz'))) {
+        disc = 'RADAR';
+      } else if (p.includes('sadece muhabere') || p.includes('sadece comint') || p.includes('sadece telsiz')) {
+        disc = 'MUHABERE';
+      }
+
+      if (p.includes('son 1 saat') || p.includes('son saat') || p.includes('1 saat')) {
+        time = 'SON_1_SAAT';
+      } else if (p.includes('son 6 saat') || p.includes('6 saat')) {
+        time = 'SON_6_SAAT';
+      } else if (p.includes('tümü') || p.includes('tüm zamanlar') || p.includes('tum zamanlar')) {
+        time = 'TUMU';
+      }
+
+      if (!zoneNum) {
+        const zonePromptMatch = p.match(/(?:bölge|kesişim bölgesi|odak)\s*#?(\d+)/i) || p.match(/(\d+)\.\s*(?:bölge|kesişim)/i);
+        if (zonePromptMatch) {
+          zoneNum = parseInt(zonePromptMatch[1], 10);
+        }
+      }
+
+      return {
+        type: 'TACTICAL_MAP',
+        minIntersectionFilter: minThreshold,
+        discipline: disc,
+        timeRange: time,
+        focusZoneNumber: zoneNum
+      };
     }
 
     // 1. Telsiz Çağrı Adı Isı Haritası & İletişim Matrisi Tetikleyicileri
@@ -326,7 +442,10 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
   };
 
   const quickPrompts = [
-    { label: '📡 Genel Taktik Durumu Özetle', prompt: 'Sahadaki genel taktik durumu, düşman radarlarını ve telsiz muhabere resmini özetle.' }
+    { label: '📡 Genel Taktik Durumu Özetle', prompt: 'Sahadaki genel taktik durumu, düşman radarlarını ve telsiz muhabere resmini özetle.' },
+    { label: '🎯 SP072 Radar İntikal İzi', prompt: 'SP072 radarının sahadaki konum geçmişini ve intikal rotasını haritada göster.' },
+    { label: '📻 VOLGA-01 Muhabere İntikal İzi', prompt: 'VOLGA-01 çağrı adlı birliğin sahadaki intikal izini ve konum geçmişini haritada göster.' },
+    { label: '🗺️ Elips Kesişim Analizi', prompt: 'Taktik haritada elips kesişim analizi yap ve kesişim bölgelerini bul, kriter 2 ve fazla kesişim olsun.' }
   ];
 
   const handleSend = async (customPrompt) => {
@@ -355,7 +474,16 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
       // İlgili görselleştirici tespit edildiyse paneli aç, alakasız sorgularda (düz tablo vb.) kapatarak tam genişliğe dön
       if (detectedWidget) {
         setActiveWidget(detectedWidget.type);
-        if (detectedWidget.type === 'PIE_DISTRIBUTION') {
+        if (detectedWidget.type === 'TACTICAL_MAP') {
+          setMapConfig({
+            minIntersectionFilter: detectedWidget.minIntersectionFilter || 3,
+            discipline: detectedWidget.discipline || 'TUMU',
+            timeRange: detectedWidget.timeRange || 'SON_24_SAAT',
+            focusZoneNumber: detectedWidget.focusZoneNumber || null,
+            trackKey: detectedWidget.trackKey || null,
+            trackSource: detectedWidget.trackSource || 'AUTO'
+          });
+        } else if (detectedWidget.type === 'PIE_DISTRIBUTION') {
           setDistributionConfig({
             source: detectedWidget.source || 'RADAR',
             criterion: detectedWidget.criterion || 'TESHIS'
@@ -419,14 +547,14 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
   // Markdown HTML formatlama + Target Link Regex enjeksiyonu
   const formatMarkdown = (markdownText) => {
     if (!markdownText) return '';
-    // [EMI-1001] -> clickable badge
+    // [EMI-XXXX] or [CLUSTER-XXXX] or [KUV-XXXX] -> clickable badge
     let processed = markdownText.replace(
-      /\[(EMI-\d+)\]/g,
+      /\[((?:EMI|CLUSTER|KUV)-[A-Za-z0-9\-_]+)\]/g,
       `<span class="interactive-target-tag radar" data-target-id="$1" title="Radar Detayını Aç">$1</span>`
     );
-    // [COM-2001] -> clickable badge
+    // [COM-XXXX] or [VOLGA-XX] or [OMAR-XX] -> clickable badge
     processed = processed.replace(
-      /\[(COM-\d+)\]/g,
+      /\[((?:COM|VOLGA|OMAR|KARTAL|SHADOW)-[A-Za-z0-9\-_]+)\]/g,
       `<span class="interactive-target-tag comint" data-target-id="$1" title="Muhabere Detayını Aç">$1</span>`
     );
 
@@ -870,6 +998,12 @@ Aşağıdaki hızlı komutları kullanabilir veya doğal dilde arama yapabilirsi
       }}>
         {activeWidget === 'TACTICAL_MAP' && (
           <TacticalMapWidget
+            initialMinIntersectionFilter={mapConfig.minIntersectionFilter}
+            initialDiscipline={mapConfig.discipline}
+            initialTimeRange={mapConfig.timeRange}
+            focusZoneNumber={mapConfig.focusZoneNumber}
+            initialTrackKey={mapConfig.trackKey}
+            initialTrackSource={mapConfig.trackSource}
             onClose={() => setActiveWidget(null)}
             onSelectTarget={onSelectTarget}
           />

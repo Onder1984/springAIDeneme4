@@ -21,6 +21,7 @@ import com.c2.ew.emission.domain.model.GeoPoint;
 
 import com.c2.ew.emission.dto.TacticalDistributionDto;
 import com.c2.ew.emission.dto.TacticalWaveformTimelineDto;
+import com.c2.ew.emission.dto.TacticalTrackDto;
 import com.c2.ew.emission.dto.RadarSpectrumOccupancyDto;
 import com.c2.ew.emission.dto.WeekdayRadarDistributionDto;
 import com.c2.ew.emission.service.RadarCorrelationService;
@@ -81,6 +82,7 @@ public class TacticalEmissionQueryService {
     private final RadarCorrelationService correlationService;
     private final RadarSpectrumOccupancyService spectrumOccupancyService;
     private final TacticalWeekdayRadarService weekdayRadarService;
+    private final TacticalTrackService trackService;
 
     public TacticalEmissionQueryService(
         TacticalEmissionJpaRepository emissionRepo,
@@ -90,7 +92,8 @@ public class TacticalEmissionQueryService {
         TacticalWaveformTimelineService timelineService,
         RadarCorrelationService correlationService,
         RadarSpectrumOccupancyService spectrumOccupancyService,
-        TacticalWeekdayRadarService weekdayRadarService
+        TacticalWeekdayRadarService weekdayRadarService,
+        TacticalTrackService trackService
     ) {
         this.emissionRepo = emissionRepo;
         this.comintRepo = comintRepo;
@@ -100,6 +103,7 @@ public class TacticalEmissionQueryService {
         this.correlationService = correlationService;
         this.spectrumOccupancyService = spectrumOccupancyService;
         this.weekdayRadarService = weekdayRadarService;
+        this.trackService = trackService;
     }
 
     private String cleanParam(String val) {
@@ -243,7 +247,20 @@ public class TacticalEmissionQueryService {
                 toStringValHelper(r[12]),              // ehUnsuru
                 sonTespit,                             // sonTespitZamani
                 formatTimestampObj(r[13]),             // sonTespitZamaniFormatted
-                toStringValHelper(r[14])               // kestirimId
+                toStringValHelper(r[14]),              // kestirimId
+                toDoubleHelper(r[15]),                 // minFrekansMhz
+                toDoubleHelper(r[16]),                 // maxFrekansMhz
+                toDoubleHelper(r[17]),                 // minPriMicroSec
+                toDoubleHelper(r[18]),                 // maxPriMicroSec
+                toDoubleHelper(r[19]),                 // minPwMicroSec
+                toDoubleHelper(r[20]),                 // maxPwMicroSec
+                toStringValHelper(r[21]),              // modulasyon
+                toStringValHelper(r[22]),              // pulseCw
+                toStringValHelper(r[23]),              // polarizasyon
+                toStringValHelper(r[24]),              // platformOrtami
+                toStringValHelper(r[25]),              // platformTipi
+                toStringValHelper(r[26]),              // hss
+                toStringValHelper(r[27])               // radarGorevi
             ));
         }
         return items;
@@ -1638,6 +1655,19 @@ public class TacticalEmissionQueryService {
 
     public WeekdayRadarDistributionDto getWeekdayEmissionDistribution() {
         return getWeekdayEmissionDistribution("TUMU", "TUMU", "ALL");
+    }
+
+    public TacticalTrackDto getKinematicTargetTrack(String source, String targetKey, String timeRange, Integer limit) {
+        CALL_LOGS.get().add(String.format("Tool Çağrısı: getKinematicTargetTrack(source=%s, targetKey=%s, timeRange=%s) çalıştırıldı.", source, targetKey, timeRange));
+        return trackService.getTargetTrack(source, targetKey, timeRange, limit);
+    }
+
+    public TacticalTrackDto getKinematicTargetTrack(String source, String targetKey) {
+        return getKinematicTargetTrack(source, targetKey, "ALL", 100);
+    }
+
+    public TacticalTrackDto getKinematicTargetTrack(String targetKey) {
+        return getKinematicTargetTrack("AUTO", targetKey, "ALL", 100);
     }
 }
 

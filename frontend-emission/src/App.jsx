@@ -6,11 +6,13 @@ import {
   DatabaseOutlined,
   ReloadOutlined,
   RobotOutlined,
-  ApiOutlined
+  ApiOutlined,
+  DashboardOutlined
 } from '@ant-design/icons';
 import RadarTable from './components/RadarTable';
 import ComintTable from './components/ComintTable';
 import DetailDrawer from './components/DetailDrawer';
+import DatabaseMonitorWidget from './components/DatabaseMonitorWidget';
 
 const { Header, Content } = Layout;
 
@@ -173,6 +175,16 @@ export default function App() {
               children: (
                 <ComintTable onRowSelect={(row) => handleOpenDetail(row.id, 'COMINT')} />
               )
+            },
+            {
+              key: 'db-monitor',
+              label: (
+                <Space>
+                  <DashboardOutlined style={{ color: '#06b6d4' }} />
+                  <span>⚡ DB & Sorgu İzleme</span>
+                </Space>
+              ),
+              children: <DatabaseMonitorWidget />
             }
           ]}
         />

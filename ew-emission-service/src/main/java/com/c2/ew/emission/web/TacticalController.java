@@ -18,6 +18,8 @@ public class TacticalController {
     private final TacticalWaveformTimelineService timelineService;
     private final RadarSpectrumOccupancyService spectrumOccupancyService;
     private final TacticalWeekdayRadarService weekdayRadarService;
+    private final TacticalIntersectionAnalysisService intersectionAnalysisService;
+    private final TacticalTrackService trackService;
 
     public TacticalController(
         TacticalEmissionQueryService emissionQueryService,
@@ -25,7 +27,9 @@ public class TacticalController {
         TacticalDistributionService distributionService,
         TacticalWaveformTimelineService timelineService,
         RadarSpectrumOccupancyService spectrumOccupancyService,
-        TacticalWeekdayRadarService weekdayRadarService
+        TacticalWeekdayRadarService weekdayRadarService,
+        TacticalIntersectionAnalysisService intersectionAnalysisService,
+        TacticalTrackService trackService
     ) {
         this.emissionQueryService = emissionQueryService;
         this.comintQueryService = comintQueryService;
@@ -33,6 +37,8 @@ public class TacticalController {
         this.timelineService = timelineService;
         this.spectrumOccupancyService = spectrumOccupancyService;
         this.weekdayRadarService = weekdayRadarService;
+        this.intersectionAnalysisService = intersectionAnalysisService;
+        this.trackService = trackService;
     }
 
     /**
@@ -108,6 +114,17 @@ public class TacticalController {
         all.addAll(emissionQueryService.getMapEmissions(limit));
         all.addAll(comintQueryService.getMapComints(limit));
         return ResponseEntity.ok(all);
+    }
+
+    /**
+     * Taktik Kesişim Bölgeleri (≥3 Elips) Frekans Gruplama ve Grup İçi Benzerlik Analizi
+     */
+    @GetMapping({"/intersection-analysis", "/intersections/analysis"})
+    public ResponseEntity<TacticalIntersectionReportDto> getIntersectionAnalysis(
+        @RequestParam(defaultValue = "3") Integer minOverlaps,
+        @RequestParam(required = false) Integer zoneNumber
+    ) {
+        return ResponseEntity.ok(intersectionAnalysisService.analyzeIntersections(minOverlaps, zoneNumber));
     }
 
     /**
@@ -217,6 +234,19 @@ public class TacticalController {
         @RequestParam(defaultValue = "200") Integer limit
     ) {
         return ResponseEntity.ok(timelineService.getTimeline(source, targetKey, timeRange, limit));
+    }
+
+    /**
+     * Taktik Kinematik Hedef İntikal ve Konum Geçmişi İzi (Radar & Muhabere)
+     */
+    @GetMapping({"/track", "/target-track"})
+    public ResponseEntity<TacticalTrackDto> getTargetTrack(
+        @RequestParam(defaultValue = "AUTO") String source,
+        @RequestParam(required = false) String targetKey,
+        @RequestParam(defaultValue = "ALL") String timeRange,
+        @RequestParam(defaultValue = "100") Integer limit
+    ) {
+        return ResponseEntity.ok(trackService.getTargetTrack(source, targetKey, timeRange, limit));
     }
 
     /**

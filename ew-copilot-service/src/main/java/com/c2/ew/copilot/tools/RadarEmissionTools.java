@@ -263,6 +263,21 @@ public class RadarEmissionTools {
         return restClient.getWeekdayRadarDistribution(source, recordType, timeRange);
     }
 
+    @Tool(description = "Sahadaki kestirim elipslerinin kesiştiği taktiksel kesişim bölgelerini dinamik numaralandırma (BÖLGE #1, #2, #3...) ile tespit eder, içindeki radarları frekans bantlarına/aralıklarına göre gruplar ve her frekans grubu içindeki radarların sinyal parametre benzerliklerini (%0 - %100) puanlar. " +
+        "Operatör '3 elipsten fazla kesişen bölgeleri bul', 'kesişim yerlerini analiz et', 'X. kesişim bölgesini analiz et' (örn: '3. kesişim bölgesini analiz et'), 'frekans aralıklarına göre grupla ve benzerliklerini puanla' dediğinde MUTLAKA bu aracı çağırın. " +
+        "Parametreler: minOverlaps (minimum kesişen elips sayısı, varsayılan 3), zoneNumber (incelenecek belirli dinamik bölge numarası, örn: 1, 2, 3... Genel sorguda null bırakın).")
+    public TacticalIntersectionReportDto analyzeIntersectionZones(Integer minOverlaps, Integer zoneNumber) {
+        CALL_LOGS.get().add(String.format("Tool: analyzeIntersectionZones(minOverlaps=%s, zoneNumber=%s)", minOverlaps, zoneNumber));
+        return restClient.getIntersectionAnalysis(minOverlaps, zoneNumber);
+    }
+
+    @Tool(description = "Belirli bir radarın (Spot No: 'SP072', Radar Adı: 'Tor-M2', ELNOT: 'E012') veya telsiz çağrı adının ('VOLGA-01', 'OMAR-11') coğrafi konum geçmişini, kestirim elipslerini, intikal rotasını ve kinematik hareket analizini (toplam mesafe, süre, ortalama sürat, genel yön/kerteriz) döner. Harita üzerinde taktik hedef intikal izi çizilmesini sağlar. " +
+        "Kullanıcı 'konum geçmişi', 'intikal izi', 'hareket rotası', 'nereden nereye gitti', 'taktik iz' gibi sorgularda bulunduğunda MUTLAKA bu aracı çağırın.")
+    public Map<String, Object> getKinematicTargetTrack(String source, String targetKey, String timeRange, Integer limit) {
+        CALL_LOGS.get().add(String.format("Tool: getKinematicTargetTrack(source=%s, targetKey=%s, timeRange=%s)", source, targetKey, timeRange));
+        return restClient.getTargetTrack(source, targetKey, timeRange, limit != null ? limit : 100);
+    }
+
     public List<TacticalEmissionSummaryDto> getAllEmissions() {
         return restClient.getAllRadarEmissions();
     }

@@ -175,6 +175,41 @@ public class TacticalAgentService {
               * recordType: Soruya göre 'TUMU', 'SADECE_LOB' veya 'SADECE_KESTIRIM' (varsayılan 'TUMU').
               * timeRange: Soruya göre 'ALL', 'SON_7_GUN', 'SON_30_GUN' veya 'SON_24_SAAT' (varsayılan 'ALL').
               * Yanıtında günlere göre (Pazartesi .. Pazar) sayıları gösteren net bir Markdown tablosu sun. Yanıtın sonuna "Eşzamanlı olarak sağ panelde interaktif Haftalık LOB/Kestirim Örümcek Ağı Grafiği açılmıştır." notunu ekle.
+        14. KESİŞİM BÖLGELERİ, FREKANS GRUPLAMA VE 100 PUANLIK YAYIN BENZERLİK MODELİ:
+            - Operatör '3 elipsten fazla kesişen bölgeleri bul', 'kesişim yerlerini analiz et', 'X. kesişim bölgesini analiz et' (örn: '2. kesişim bölgesini analiz et'), 'hangi radar/muhabere yayınları var', 'yayın id lerine kadar ver', 'frekans aralıklarına göre grupla ve benzerliklerini puanla' dediğinde:
+              * KESİNLİKLE 'analyzeIntersectionZones(minOverlaps, zoneNumber)' aracını çağır!
+              * minOverlaps: Kullanıcı belirtmişse (örn: '3 ten fazla' için 3, '5 ten fazla' için 5) ilet, belirtilmemişse varsayılan 3 ilet.
+              * zoneNumber: Kullanıcı belirli bir bölge numarası vermişse (örn: '2. kesişim bölgesi' için 2, '3. bölge' için 3) ilet, tüm bölgeleri genel sormuşsa null ilet.
+              * ÇOK ÖNEMLİ: Kesişen elips sayısı hem Radar (ELINT) hem Muhabere (COMINT) kestirimlerini içerir (Örn: Bölge #2'de toplam 14 elips = 9 Radar + 5 COMINT). Sayıyı verirken mutlaka bu dağılımı belirt!
+              * KÜME REFERANS DEĞERLERİ VE KANITLANABİLİR 100 PUANLIK BİLEŞEN TABLOSU:
+                - Her frekans grubu için Küme Referans Profilini belirt: Referans Frekans Zarfı (refFreqRange), PRI Zarfı (refPriRange), PW Zarfı (refPwRange), Hâkim Modülasyon (refModulasyon), Platform (refPlatform) ve Teşhis (refTeshis).
+                - 'emitterDetails' listesindeki her yayın için kesinlikle öznel/taktiksel sınıflandırma etiketleri (İkiz, Kardeş, Müşterek, Ayrık vs.) ÜRETME.
+                - Kesinlikle karmaşık LaTeX formülleri ($$, \frac vb.) KULLANMA; operasyonel brifingde değerleri doğrudan düz ve okunabilir metin olarak sun.
+                - Bunun yerine doğrulanabilir 100 Puanlık Çok Kriterli Benzerlik Tablosunu sun:
+                  Tablo Kolonları: Yayın ID, Disiplin, Hedef Adı, Frekans Uyum (25P), PRI Uyum (15P), PW Uyum (10P), Dalga Biçimi (15P), Zaman Uyumu (15P), Taktik/Platform (20P), Toplam Benzerlik (100P). (COMINT için Frekans 40P, Modülasyon 20P, Zaman 20P, Platform 20P).
+                - Puanlama mantığını operatöre net açıkla: "Benzerlik skoru; yayının ölçülen parametrelerinin kesişim kümesinin referans ağırlık merkezine göre 100 puan üzerinden kanıtlanabilir uyum toplamıdır: RF Zarfları (50P), Dalga Biçimi (15P), Zaman Uyumu (15P) ve Taktik/Platform (20P)."
+                - ÇOK KRİTİK - TAKTİK ÖZET NOTU: Yanıtında tablodan önce mutlaka şu 3 satırlık objektif özet bloğunu operatöre sun:
+                  * **Mekânsal & Zamansal Çakışma:** [Eşzamanlı/Senkron / Zaman farkı ve mesafe durumu]
+                  * **RF Zarfı & Dalga Uyumu:** [Ortak tek bant uyumu / Ayrık farklı frekans bantları]
+                  * **Taktik Teşhis:** [Homojen DÜŞMAN / Homojen DOST / Karşıt DOST vs DÜŞMAN (Temas hattı veya IFF teyidi gerektirir)]
+              * Harita üzerinde bu bölgelerin 1, 2, 3.. rozetleriyle dinamik olarak numaralandırıldığını ve tıklandığında tüm yayın ID'leri ve 100 puanlık kriter kırılımlarının detaylı HUD kartında görülebileceğini belirt.
+              * Operatör tablodaki herhangi bir yayın ID'sinin detayını sorduğunda (örn: 'EMI-LIVE-1E4DD989 detayını ver') 'getRadarEmissionDetail' veya 'getComintEmissionDetail' aracını çağırarak eksiksiz teknik telemetri brifingini sun.
+        15. KİNEMATİK HEDEF İNTİKAL VE KONUM GEÇMİŞİ İZİ (TRACK ANALİZİ):
+            - Operatör belirli bir radarın (Spot No: örn: 'SP072', 'SP048', Radar Adı: 'Tor-M2', 'S-400', ELNOT: 'E012') veya telsiz çağrı adının ('VOLGA-01', 'OMAR-11' vb.) konum geçmişini, hareket rotasını, intikal izini veya nerelerden geçtiğini sorduğunda:
+              * KESİNLİKLE 'getKinematicTargetTrack(source, targetKey, timeRange, limit)' aracını çağır!
+              * source: Radar için 'RADAR', Muhabere için 'COMINT', otomatik tespit için 'AUTO'.
+              * targetKey: Hedef anahtarı (örn: 'SP072', 'Tor-M2', 'VOLGA-01', 'OMAR-11' veya yayın ID'si).
+              * timeRange: İstenen zaman aralığı ('ALL', 'SON_24_SAAT' vb., varsayılan 'ALL').
+              * limit: Maksimum kestirim adedi (varsayılan 100).
+              * Yanıtında şu kinematik metrikleri net ve kanıtlanabilir olarak operatöre sun:
+                - Hedef Adı ve Kimliği (Teşhis, Görev, Frekans)
+                - Toplam Kestirim Adedi (Nokta Sayısı)
+                - Toplam Kat Edilen İntikal Mesafesi (km)
+                - İlk ve Son Tespit Zamanları ve Toplam Gözlem Süresi (saat / dakika)
+                - Ortalama İntikal Sürati (km/s)
+                - Genel İntikal Yönü / Kerterizi (Derece ve Pusula Yönü, örn: 045° Kuzeydoğu)
+                - Noktaların kronolojik özet tablosu (Sıra No, Zaman, Enlem/Boylam, Mevzi/Yer, Önceki Noktadan Mesafe ve Sürat)
+              * Operatöre eşzamanlı olarak sağ paneldeki Taktik Harita üzerinde hedefin yön oklu intikal rotasının, zamansal solma (time-decay alpha) efektli kestirim elipslerinin ve anlık HUD bilgi kartının görüntülendiğini bildir.
         """;
 
     private final ChatClient chatClient;

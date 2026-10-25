@@ -4,11 +4,13 @@ import {
   RadarChartOutlined,
   SecurityScanOutlined,
   DatabaseOutlined,
-  RobotOutlined
+  RobotOutlined,
+  DashboardOutlined
 } from '@ant-design/icons';
 import RadarTable from '../../components/RadarTable';
 import ComintTable from '../../components/ComintTable';
 import DetailDrawer from '../../components/DetailDrawer';
+import DatabaseMonitorWidget from '../../components/DatabaseMonitorWidget';
 
 /**
  * 📡 YAYIN VE TELEMETRİ MİKRO-FRONTEND UYGULAMASI (Port: 8081 Veri Sağlayıcıya Bağlı)
@@ -121,6 +123,16 @@ export default function EmissionApp({
                 onSelectComint={(id) => handleOpenDetail(id, 'COMINT')}
               />
             )
+          },
+          {
+            key: 'db-monitor',
+            label: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px' }}>
+                <DashboardOutlined style={{ color: '#06b6d4' }} />
+                ⚡ DB & Sorgu İzleme
+              </span>
+            ),
+            children: <DatabaseMonitorWidget />
           }
         ]}
       />

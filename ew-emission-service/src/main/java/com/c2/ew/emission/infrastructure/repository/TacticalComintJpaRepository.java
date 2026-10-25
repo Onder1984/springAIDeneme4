@@ -235,7 +235,8 @@ public interface TacticalComintJpaRepository extends JpaRepository<TacticalComin
            "       c.yayin_semi_major_meters, c.yayin_semi_minor_meters, c.yayin_orientation_degrees, " +
            "       c.eh_unsuru_enlem, c.eh_unsuru_boylam, c.yon, " +
            "       c.teshis_kimlik, c.cagri_adi, c.eh_unsuru, " +
-           "       c.son_tespit_zamani, c.kestirim_id " +
+           "       c.son_tespit_zamani, c.kestirim_id, " +
+           "       c.min_frekans_mhz, c.max_frekans_mhz " +
            "FROM tactical_comint c " +
            "ORDER BY c.son_tespit_zamani DESC LIMIT :limit", nativeQuery = true)
     List<Object[]> findMapComintsNative(@Param("limit") int limit);

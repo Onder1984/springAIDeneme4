@@ -7,10 +7,12 @@ import {
   SplitCellsOutlined,
   CheckCircleOutlined,
   SyncOutlined,
-  RadarChartOutlined
+  RadarChartOutlined,
+  DashboardOutlined
 } from '@ant-design/icons';
 import EmissionApp from '../apps/emission/EmissionApp';
 import CopilotApp from '../apps/copilot/CopilotApp';
+import DatabaseMonitorWidget from '../components/DatabaseMonitorWidget';
 
 const { Header, Content } = Layout;
 
@@ -116,6 +118,11 @@ export default function ComposerLayout() {
               key: 'copilot',
               icon: <RobotOutlined style={{ fontSize: 16, color: '#a855f7' }} />,
               label: 'AI Copilot & Analitik'
+            },
+            {
+              key: 'db-monitor',
+              icon: <DashboardOutlined style={{ fontSize: 16, color: '#06b6d4' }} />,
+              label: '⚡ DB & Sorgu İzleme'
             }
           ]}
         />
@@ -195,6 +202,11 @@ export default function ComposerLayout() {
               />
             </Col>
           </Row>
+        )}
+
+        {/* Mod 4: Veritabanı ve Sorgu Performans İzleme (Tam Ekran) */}
+        {currentMenu === 'db-monitor' && (
+          <DatabaseMonitorWidget />
         )}
       </Content>
     </Layout>

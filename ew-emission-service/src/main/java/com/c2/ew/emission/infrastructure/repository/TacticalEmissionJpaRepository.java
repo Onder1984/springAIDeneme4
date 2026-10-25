@@ -119,7 +119,13 @@ public interface TacticalEmissionJpaRepository extends JpaRepository<TacticalEmi
            "       e.yayin_semi_major_meters, e.yayin_semi_minor_meters, e.yayin_orientation_degrees, " +
            "       e.eh_unsuru_enlem, e.eh_unsuru_boylam, e.yon, " +
            "       e.teshis_kimlik, e.radar_adi, e.eh_unsuru, " +
-           "       e.son_tespit_zamani, e.kestirim_id " +
+           "       e.son_tespit_zamani, e.kestirim_id, " +
+           "       e.min_frekans_mhz, e.max_frekans_mhz, " +
+           "       e.min_pri_micro_sec, e.max_pri_micro_sec, " +
+           "       e.min_pw_micro_sec, e.max_pw_micro_sec, " +
+           "       e.modulasyon, e.pulse_cw, e.polarizasyon, " +
+           "       e.platform_ortami, e.platform_tipi, " +
+           "       e.hss, e.radar_gorevi " +
            "FROM tactical_emissions e " +
            "ORDER BY e.son_tespit_zamani DESC LIMIT :limit", nativeQuery = true)
     List<Object[]> findMapEmissionsNative(@Param("limit") int limit);

@@ -177,9 +177,29 @@ Operatörün haftalık LOB ve kestirim sayılarını 7 kollu örümcek ağı / r
    - ECharts Radar bileşeni ile 7 günün kolları (Pazartesi .. Pazar), çift renkli poligonlar (Radar: Cyan `#38bdf8`, Muhabere: Mor `#c084fc`, yarı saydam taktik dolgular) tasarlandı.
    - Sayısal KPI kartları (Toplam Radar, Toplam Muhabere, Genel Toplam) ve tablo/grafik görünüm geçişi sağlandı.
    - Tam ekran projeksiyon modalı entegre edildi.
-5. **Copilot Menü ve Mesaj Entegrasyonu:**
-   - Sohbet menü çubuğuna 5. buton olarak **`🕸️ Haftalık LOB Dağılımı`** sola yanaşık eklendi.
-   - Ajan yanıtında tespit edilen `WEEKDAY_RADAR` için sağ panel otomatik olarak açılarak operatöre anında görsel taktik resim sunulmaktadır.
+---
+
+## ✅ TAMAMLANDI - TODO-09: Canlı Veritabanı ve Sorgu Performans İzleme Paneli (pg_stat_statements Profiler)
+
+### 1. Durum: **MİMARİ VE UYGULAMA TAMAMLANDI, DOĞRULANDI**
+Operatörün ve yöneticinin uygulama koduna müdahale etmeden PostgreSQL/PostGIS sorgu performansını, tam tablo taramalarını (Seq Scan), indeks kullanım oranlarını ve yavaş sorguları gerçek zamanlı izleme ihtiyacı eksiksiz karşılanmıştır:
+
+1. **Backend Servis & API Katmanı (`ew-emission-service`):**
+   - [DatabaseMetricsDto.java](file:///c:/Users/onderproje/Desktop/AntigravitySpringAIDeneme4/ew-emission-service/src/main/java/com/c2/ew/emission/dto/DatabaseMetricsDto.java): Kapsamlı özet KPI'lar, tekil SQL şablonları, tablo taramaları ve indeks kullanım istatistikleri.
+   - [DatabaseMonitoringService.java](file:///c:/Users/onderproje/Desktop/AntigravitySpringAIDeneme4/ew-emission-service/src/main/java/com/c2/ew/emission/service/DatabaseMonitoringService.java): `pg_stat_statements`, `pg_stat_user_tables`, `pg_stat_user_indexes` ve `pg_stat_activity` görünümlerinden canlı profil toplayan ve `SELECT pg_stat_statements_reset()` ile sayaç sıfırlayan servis.
+   - [DatabaseMonitoringController.java](file:///c:/Users/onderproje/Desktop/AntigravitySpringAIDeneme4/ew-emission-service/src/main/java/com/c2/ew/emission/web/DatabaseMonitoringController.java): 
+     - `GET /api/v1/tactical/db-monitor/stats` (limit ve dinamik sıralama: `mean_time`, `total_time`, `calls`, `max_time`)
+     - `POST /api/v1/tactical/db-monitor/reset` (sayaç sıfırlama)
+2. **Frontend Taktik Görselleştirici Bileşeni (`DatabaseMonitorWidget.jsx`):**
+   - **Özet KPI Kartları:** Toplam Yürütülen Çağrı, Ortalama Yürütme Süresi (ms), 50ms Üzeri Yavaş Sorgu Sayısı, Buffer Cache Hit Oranı (%) ve Aktif DB Bağlantısı.
+   - **Tab 1 - Sorgu Performansı:** Normalize edilmiş SQL şablonları, çağrı adetleri, ortalama süre (Yeşil < 10ms, Turuncu 10-50ms, Kırmızı > 50ms), pik süre, satır sayısı ve cache hit progress barları. SQL şablonuna tıklandığında açılan tam detay modalı ve panoya kopyalama özelliği.
+   - **Tab 2 - Tablo Taramaları ve İndeks Verimliliği:** Seq Scan vs Index Scan karşılaştırması ve `%95+` verimlilik doğrulaması.
+   - **Tab 3 - İndeks Kullanım İstatistikleri:** Hangi B-Tree ve PostGIS GiST indeksinin kaç kez tarandığı ve disk boyutları (`pg_size_pretty`).
+   - **Kontroller:** Otomatik yenileme switch'i (5s), canlı yenile butonu, sıralama ve limit filtreleri, güvenli sıfırlama popconfirm'i.
+3. **MFE ve Telemetri Entegrasyonu:**
+   - Hem ortak kabukta ([ComposerLayout.jsx](file:///c:/Users/onderproje/Desktop/AntigravitySpringAIDeneme4/frontend/src/composer/ComposerLayout.jsx)) ana menüde **`⚡ DB & Sorgu İzleme`**,
+   - Hem de bağımsız telemetri konsolunda ([App.jsx](file:///c:/Users/onderproje/Desktop/AntigravitySpringAIDeneme4/frontend-emission/src/App.jsx)) 3. sekme olarak operatörün kullanımına sunulmuştur.
+
 
 
 

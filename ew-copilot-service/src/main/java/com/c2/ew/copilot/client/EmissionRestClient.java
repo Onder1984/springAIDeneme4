@@ -408,4 +408,46 @@ public class EmissionRestClient {
             return Collections.emptyMap();
         }
     }
+
+    /**
+     * Taktik Kesişim Bölgeleri (≥3 Elips) Frekans Gruplama ve Grup İçi Benzerlik Analizi
+     */
+    public TacticalIntersectionReportDto getIntersectionAnalysis(Integer minOverlaps, Integer zoneNumber) {
+        try {
+            return restClient.get()
+                .uri(uriBuilder -> {
+                    var builder = uriBuilder.path("/api/v1/tactical/intersection-analysis");
+                    if (minOverlaps != null) builder.queryParam("minOverlaps", minOverlaps);
+                    if (zoneNumber != null) builder.queryParam("zoneNumber", zoneNumber);
+                    return builder.build();
+                })
+                .retrieve()
+                .body(TacticalIntersectionReportDto.class);
+        } catch (Exception e) {
+            log.error("Kesişim bölgesi analizi sorgu hatası: {}", e.getMessage());
+            return new TacticalIntersectionReportDto(0, minOverlaps != null ? minOverlaps : 3, zoneNumber, Collections.emptyList());
+        }
+    }
+
+    /**
+     * Taktik Kinematik Hedef İntikal ve Konum Geçmişi İzi
+     */
+    public Map<String, Object> getTargetTrack(String source, String targetKey, String timeRange, Integer limit) {
+        try {
+            return restClient.get()
+                .uri(uriBuilder -> {
+                    var builder = uriBuilder.path("/api/v1/tactical/track");
+                    if (source != null) builder.queryParam("source", source);
+                    if (targetKey != null) builder.queryParam("targetKey", targetKey);
+                    if (timeRange != null) builder.queryParam("timeRange", timeRange);
+                    if (limit != null) builder.queryParam("limit", limit);
+                    return builder.build();
+                })
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            log.error("Hedef intikal izi sorgu hatası: {}", e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
 }
